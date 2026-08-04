@@ -1,0 +1,75 @@
+@font-face {
+  font-family: "Bricolage";
+  src: url("/assets/fonts/BricolageGrotesque-Variable.woff2") format("woff2-variations"),
+       url("/assets/fonts/BricolageGrotesque-Variable.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Instrument";
+  src: url("/assets/fonts/InstrumentSans-Variable.woff2") format("woff2-variations"),
+       url("/assets/fonts/InstrumentSans-Variable.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fragment Mono";
+  src: url("/assets/fonts/FragmentMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  /* surfaces */
+  --void: #08090e;
+  --bg: #0d0f18;
+  --raised: #141726;
+  --overlay: #1b1e33;
+  --overlay-hi: #242847;
+
+  /* borders */
+  --line: rgba(237, 236, 250, 0.09);
+  --line-strong: rgba(237, 236, 250, 0.18);
+  --line-brand: rgba(140, 115, 255, 0.4);
+
+  /* ink */
+  --ink-1: #f5f4fc;
+  --ink-2: #b3b0d1;
+  --ink-3: #716d99;
+  --ink-4: #46436b;
+
+  /* brand + signals */
+  --brand: #8c73ff;
+  --brand-soft: #b4a2ff;
+  --brand-dim: #4b3d99;
+  --lime: #c6ff5e;
+  --lime-dim: #5a7a2b;
+  --amber: #ffbf4d;
+  --amber-dim: #8a6423;
+  --coral: #ff5d73;
+  --coral-dim: #7a2e3a;
+  --cyan: #5ee6d0;
+
+  /* gradients (used sparingly) */
+  --mesh: radial-gradient(60% 50% at 15% 10%, rgba(140, 115, 255, 0.35), transparent 60%),
+          radial-gradient(45% 40% at 90% 0%, rgba(94, 230, 208, 0.18), transparent 60%),
+          radial-gradient(55% 45% at 80% 90%, rgba(255, 191, 77, 0.12), transparent 60%);
+
+  /* type */
+  --f-display: "Bricolage", "Instrument", sans-serif;
+  --f-body: "Instrument", -apple-system, sans-serif;
+  --f-mono: "Fragment Mono", ui-monospace, monospace;
+
+  /* radii */
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+
+  /* motion */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* layout */
+  --page-max: 1240px;
+  --edge: clamp(20px, 5vw, 64px);
+}
