@@ -1,6 +1,8 @@
 import { ref, reactive, computed, watch } from "vue";
 import { auth } from "../store/auth.js";
 import { servers, rankedServers } from "../data/servers.js";
+import { voteServer, saveServerSettings, addServerComment } from "../actions/servers.js";
+import { initials } from "../lib/format.js";
 import ServerPicker from "../components/ui/ServerPicker.js";
 import VoteControl from "../components/ui/VoteControl.js";
 import Podium from "../components/ui/Podium.js";
@@ -20,11 +22,13 @@ export default {
     const newTag = ref("");
     const saving = ref(false);
     const savedFlash = ref(false);
+    const saveError = ref("");
 
     function loadDraft(id) {
       const s = servers.find((x) => x.id === id);
       if (!s) return;
       Object.assign(draft, cloneDraft(s));
+      saveError.value = "";
     }
     watch(selectedId, loadDraft, { immediate: true });
     watch(adminServers, (list) => {
@@ -43,10 +47,13 @@ export default {
     async function save() {
       if (!selectedId.value || saving.value) return;
       saving.value = true;
-      await new Promise((r) => setTimeout(r, 550));
-      const s = servers.find((x) => x.id === selectedId.value);
-      Object.assign(s, { ...draft, tags: [...draft.tags], port: Number(draft.port) || s.port });
+      saveError.value = "";
+      const result = await saveServerSettings(selectedId.value, draft);
       saving.value = false;
+      if (!result.success) {
+        saveError.value = result.message;
+        return;
+      }
       savedFlash.value = true;
       setTimeout(() => (savedFlash.value = false), 2200);
     }
@@ -65,34 +72,18 @@ export default {
       newComment.value = "";
     }
     function vote(server, dir) {
-      if (!auth.isAuthenticated) return;
-      const prev = server.userVote;
-      if (prev === dir) {
-        if (dir === 1) server.upvotes--; else server.downvotes--;
-        server.userVote = 0;
-      } else {
-        if (prev === 1) server.upvotes--;
-        if (prev === -1) server.downvotes--;
-        if (dir === 1) server.upvotes++; else server.downvotes++;
-        server.userVote = dir;
-      }
+      voteServer(server, dir);
     }
-    function addComment(server) {
-      if (!auth.isAuthenticated || !newComment.value.trim()) return;
-      server.comments.unshift({
-        id: "c" + Date.now(),
-        author: auth.user.username,
-        time: "à l'instant",
-        body: newComment.value.trim(),
-      });
-      newComment.value = "";
+    function submitComment(server) {
+      const result = addServerComment(server, newComment.value);
+      if (result.success) newComment.value = "";
     }
 
     return {
-      auth, adminServers, selectedId, draft, newTag, saving, savedFlash,
-      addTag, removeTag, save, resetDraft,
+      auth, adminServers, selectedId, draft, newTag, saving, savedFlash, saveError,
+      addTag, removeTag, save, resetDraft, initials,
       ranked, top3, rest, expandedId, newComment,
-      toggleExpand, vote, addComment,
+      toggleExpand, vote, submitComment,
     };
   },
   template: /* html */ `
@@ -164,7 +155,8 @@ export default {
                 </button>
                 <button class="btn btn--ghost" @click="resetDraft" :disabled="saving">Annuler</button>
               </div>
-              <p v-if="savedFlash" class="mono" style="color:var(--lime); font-size:12px; margin-top:10px;">✓ modifications enregistrées</p>
+              <p v-if="saveError" class="mono" style="color:var(--coral); font-size:12px; margin-top:10px;">{{ saveError }}</p>
+              <p v-else-if="savedFlash" class="mono" style="color:var(--lime); font-size:12px; margin-top:10px;">✓ modifications enregistrées</p>
             </div>
           </div>
         </div>
@@ -193,7 +185,7 @@ export default {
                 @keydown.enter="toggleExpand(s.id)"
               >
                 <span class="rank-row__num">{{ i + 4 }}</span>
-                <span class="rank-row__icon">{{ s.name.slice(0,2).toUpperCase() }}</span>
+                <span class="rank-row__icon">{{ initials(s.name) }}</span>
                 <span class="rank-row__meta">
                   <span class="rank-row__title">{{ s.name }}</span>
                   <div class="rank-row__sub">{{ s.ip }}:{{ s.port }} · {{ s.online ? s.players.now + ' en ligne' : 'hors ligne' }}</div>
@@ -216,7 +208,7 @@ export default {
                 <div class="eyebrow" style="margin-bottom:10px;">{{ s.comments.length }} commentaire{{ s.comments.length === 1 ? '' : 's' }}</div>
                 <div v-if="s.comments.length">
                   <div class="comment" v-for="c in s.comments" :key="c.id">
-                    <span class="comment__avatar">{{ c.author.slice(0,2).toUpperCase() }}</span>
+                    <span class="comment__avatar">{{ initials(c.author) }}</span>
                     <div>
                       <span class="comment__name">{{ c.author }}</span>
                       <span class="comment__time"> · {{ c.time }}</span>
@@ -226,7 +218,7 @@ export default {
                 </div>
                 <p v-else class="empty" style="padding:16px 0;">Aucun commentaire pour l'instant.</p>
 
-                <form class="server-comment-form" @submit.prevent="addComment(s)">
+                <form class="server-comment-form" @submit.prevent="submitComment(s)">
                   <input
                     type="text"
                     :disabled="!auth.isAuthenticated"

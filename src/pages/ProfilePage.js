@@ -1,10 +1,12 @@
 import { auth, authActions } from "../store/auth.js";
 import { accentOptions } from "../data/profile.js";
+import { setAccent, toggleSetting } from "../actions/profile.js";
+import { coins } from "../lib/format.js";
 
 export default {
   name: "ProfilePage",
   setup() {
-    return { auth, authActions, accentOptions };
+    return { auth, authActions, accentOptions, setAccent, toggleSetting, coins };
   },
   template: /* html */ `
     <section class="wrap" style="padding-block:48px 90px;">
@@ -40,7 +42,7 @@ export default {
           <div class="card bracketed">
             <span class="eyebrow" style="margin-bottom:16px;">PikaCoins</span>
             <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:24px;">
-              <span class="coin" style="font-size:36px;"><span class="coin__icon" style="width:26px;height:26px;"></span>{{ auth.user.pikaCoins.toLocaleString('fr-FR') }}</span>
+              <span class="coin" style="font-size:36px;"><span class="coin__icon" style="width:26px;height:26px;"></span>{{ coins(auth.user.pikaCoins) }}</span>
               <span class="mono" style="font-size:12.5px; color:var(--ink-3);">solde disponible</span>
             </div>
             <div class="eyebrow" style="margin-bottom:10px;">Activité récente</div>
@@ -50,7 +52,7 @@ export default {
                   <div class="coin-row__label">{{ h.label }}</div>
                   <div class="coin-row__time">{{ h.time }}</div>
                 </div>
-                <span class="mono" :style="{ color: h.delta > 0 ? 'var(--lime)' : 'var(--coral)' }">{{ h.delta > 0 ? '+' : '' }}{{ h.delta.toLocaleString('fr-FR') }}</span>
+                <span class="mono" :style="{ color: h.delta > 0 ? 'var(--lime)' : 'var(--coral)' }">{{ h.delta > 0 ? '+' : '' }}{{ coins(h.delta) }}</span>
               </div>
             </div>
           </div>
@@ -70,7 +72,7 @@ export default {
                     :class="{ 'is-active': auth.user.settings.accent === a.id }"
                     :style="{ background: a.color }"
                     :aria-label="a.label"
-                    @click="auth.user.settings.accent = a.id"
+                    @click="setAccent(a.id)"
                   ></button>
                 </div>
               </div>
@@ -80,7 +82,7 @@ export default {
                   <div class="setting-row__hint">Visibles sur votre carte d'identité publique</div>
                 </div>
                 <label class="toggle">
-                  <button type="button" role="switch" :aria-checked="auth.user.settings.showBadges" class="toggle__track" :class="{ 'is-on': auth.user.settings.showBadges }" @click="auth.user.settings.showBadges = !auth.user.settings.showBadges">
+                  <button type="button" role="switch" :aria-checked="auth.user.settings.showBadges" class="toggle__track" :class="{ 'is-on': auth.user.settings.showBadges }" @click="toggleSetting('showBadges')"
                     <span class="toggle__thumb"></span>
                   </button>
                 </label>
@@ -91,7 +93,7 @@ export default {
                   <div class="setting-row__hint">Visible par les autres membres sur le classement</div>
                 </div>
                 <label class="toggle">
-                  <button type="button" role="switch" :aria-checked="auth.user.settings.publicProfile" class="toggle__track" :class="{ 'is-on': auth.user.settings.publicProfile }" @click="auth.user.settings.publicProfile = !auth.user.settings.publicProfile">
+                  <button type="button" role="switch" :aria-checked="auth.user.settings.publicProfile" class="toggle__track" :class="{ 'is-on': auth.user.settings.publicProfile }" @click="toggleSetting('publicProfile')"
                     <span class="toggle__thumb"></span>
                   </button>
                 </label>

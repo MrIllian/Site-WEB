@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { initials } from "../../lib/format.js";
 
 export default {
   name: "ServerPicker",
@@ -14,7 +15,7 @@ export default {
       emit("update:modelValue", id);
       open.value = false;
     }
-    return { open, select };
+    return { open, select, initials };
   },
   computed: {
     current() {
@@ -24,7 +25,7 @@ export default {
   template: /* html */ `
     <div class="server-picker" :class="{ 'is-open': open }" v-click-outside="() => open = false">
       <button type="button" class="server-picker__trigger" @click="open = !open">
-        <span class="server-picker__icon">{{ current ? current.name.slice(0,2).toUpperCase() : '—' }}</span>
+        <span class="server-picker__icon">{{ current ? initials(current.name) : '—' }}</span>
         <span class="server-picker__meta">
           <span class="server-picker__name">{{ current ? current.name : placeholder }}</span>
           <span class="server-picker__sub" v-if="current">{{ current.ip }}</span>
@@ -40,7 +41,7 @@ export default {
           :class="{ 'is-active': s.id === modelValue }"
           @click="select(s.id)"
         >
-          <span class="server-picker__icon" style="width:24px;height:24px;font-size:11px;">{{ s.name.slice(0,2).toUpperCase() }}</span>
+          <span class="server-picker__icon" style="width:24px;height:24px;font-size:11px;">{{ initials(s.name) }}</span>
           {{ s.name }}
         </button>
         <div v-if="!servers.length" class="empty">Aucun serveur disponible</div>

@@ -2,6 +2,7 @@ import { ref, computed } from "vue";
 import { auth, authActions } from "../store/auth.js";
 import { servers } from "../data/servers.js";
 import { inventoryByServer } from "../data/inventory.js";
+import { formatNumber } from "../lib/format.js";
 import ServerPicker from "../components/ui/ServerPicker.js";
 
 export default {
@@ -13,7 +14,7 @@ export default {
     const selectedId = ref(availableServers.value[0]?.id || null);
     const inventory = computed(() => inventoryByServer[selectedId.value] || { roles: [], blocks: [], items: [] });
 
-    return { auth, authActions, availableServers, selectedId, inventory };
+    return { auth, authActions, availableServers, selectedId, inventory, formatNumber };
   },
   template: /* html */ `
     <section class="wrap" style="padding-block:48px 90px;">
@@ -56,7 +57,7 @@ export default {
               <div class="inv-tile" v-for="b in inventory.blocks" :key="b.id">
                 <span class="inv-tile__icon">{{ b.icon }}</span>
                 <span>{{ b.name }}</span>
-                <span class="inv-tile__qty">×{{ b.qty.toLocaleString('fr-FR') }}</span>
+                <span class="inv-tile__qty">×{{ formatNumber(b.qty) }}</span>
               </div>
             </div>
             <div v-if="!inventory.blocks.length" class="empty">Aucune ressource suivie.</div>

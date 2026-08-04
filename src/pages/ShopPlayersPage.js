@@ -2,6 +2,8 @@ import { ref, reactive, computed } from "vue";
 import { auth } from "../store/auth.js";
 import { servers } from "../data/servers.js";
 import { marketByServer } from "../data/shop.js";
+import { buyMarketListing, placeBid as placeBidAction, createListing } from "../actions/shop.js";
+import { coins } from "../lib/format.js";
 import ServerPicker from "../components/ui/ServerPicker.js";
 
 const FILTERS = [
@@ -23,6 +25,7 @@ export default {
     const showSellForm = ref(false);
     const sellDraft = reactive({ item: "", price: 100, type: "vente" });
     const flash = ref(null);
+    const sellError = ref("");
 
     const listings = computed(() => {
       const all = marketByServer[selectedId.value] || [];
@@ -31,17 +34,8 @@ export default {
     });
 
     function buy(listing) {
-      if (!auth.isAuthenticated || auth.user.pikaCoins < listing.price) return;
-      auth.user.pikaCoins -= listing.price;
-      auth.user.pikaCoinsHistory.unshift({
-        id: "h" + Date.now(),
-        label: "Achat — " + listing.item,
-        delta: -listing.price,
-        time: "à l'instant",
-      });
-      const arr = marketByServer[selectedId.value];
-      const idx = arr.findIndex((l) => l.id === listing.id);
-      if (idx > -1) arr.splice(idx, 1);
+      const result = buyMarketListing(selectedId.value, listing);
+      if (!result.success) return;
       flash.value = listing.item + " acheté";
       setTimeout(() => (flash.value = null), 2000);
     }
@@ -50,26 +44,18 @@ export default {
       bidTargetId.value = listing.id;
       bidAmount.value = listing.price + 10;
     }
-    function placeBid(listing) {
-      if (!auth.isAuthenticated || bidAmount.value <= listing.price) return;
-      listing.price = bidAmount.value;
-      listing.bids = (listing.bids || 0) + 1;
-      bidTargetId.value = null;
+    function submitBid(listing) {
+      const result = placeBidAction(listing, Number(bidAmount.value));
+      if (result.success) bidTargetId.value = null;
     }
 
     function submitSell() {
-      if (!auth.isAuthenticated || !sellDraft.item.trim() || sellDraft.price <= 0) return;
-      const arr = marketByServer[selectedId.value] || (marketByServer[selectedId.value] = []);
-      arr.unshift({
-        id: "m" + Date.now(),
-        type: sellDraft.type,
-        item: sellDraft.item.trim(),
-        icon: "🎁",
-        seller: auth.user.username,
-        price: Number(sellDraft.price),
-        bids: sellDraft.type === "enchere" ? 0 : undefined,
-        endsIn: sellDraft.type === "enchere" ? "24:00:00" : undefined,
-      });
+      const result = createListing(selectedId.value, sellDraft);
+      if (!result.success) {
+        sellError.value = result.message;
+        return;
+      }
+      sellError.value = "";
       sellDraft.item = "";
       sellDraft.price = 100;
       sellDraft.type = "vente";
@@ -78,8 +64,8 @@ export default {
 
     return {
       auth, FILTERS, availableServers, selectedId, filter, listings,
-      bidTargetId, bidAmount, showSellForm, sellDraft, flash,
-      buy, openBid, placeBid, submitSell,
+      bidTargetId, bidAmount, showSellForm, sellDraft, flash, sellError, coins,
+      buy, openBid, submitBid, submitSell,
     };
   },
   template: /* html */ `
@@ -111,7 +97,7 @@ export default {
         </div>
         <div class="coin" style="font-size:20px;">
           <span class="coin__icon"></span>
-          <span v-if="auth.isAuthenticated">{{ auth.user.pikaCoins.toLocaleString('fr-FR') }} PikaCoins</span>
+          <span v-if="auth.isAuthenticated">{{ coins(auth.user.pikaCoins) }} PikaCoins</span>
           <span v-else class="mono" style="font-size:13px;color:var(--ink-3)">—</span>
         </div>
       </div>
@@ -138,6 +124,7 @@ export default {
           </div>
           <button class="btn btn--primary" @click="submitSell">Publier</button>
         </div>
+        <p v-if="sellError" class="mono" style="color:var(--coral); font-size:12px; margin-top:10px;">{{ sellError }}</p>
       </div>
 
       <p v-if="flash" class="mono" style="color:var(--lime); font-size:12.5px; margin-bottom:16px;">✓ {{ flash }}</p>
@@ -159,7 +146,7 @@ export default {
           </div>
 
           <div class="item-card__row">
-            <span class="coin"><span class="coin__icon"></span>{{ l.price.toLocaleString('fr-FR') }}</span>
+            <span class="coin"><span class="coin__icon"></span>{{ coins(l.price) }}</span>
             <button v-if="l.type === 'vente'" class="btn btn--sm btn--primary" :disabled="!auth.isAuthenticated || auth.user.pikaCoins < l.price" @click="buy(l)">
               {{ !auth.isAuthenticated ? 'Connexion requise' : (auth.user.pikaCoins < l.price ? 'Solde insuffisant' : 'Acheter') }}
             </button>
@@ -168,7 +155,7 @@ export default {
 
           <div v-if="bidTargetId === l.id" style="display:flex; gap:8px;">
             <input type="number" v-model="bidAmount" :min="l.price + 1" style="background:var(--void); border:1px solid var(--line-strong); border-radius:var(--r-md); padding:8px 10px; width:100%; color:var(--ink-1);" />
-            <button class="btn btn--sm btn--primary" @click="placeBid(l)">Valider</button>
+            <button class="btn btn--sm btn--primary" @click="submitBid(l)">Valider</button>
           </div>
         </div>
       </div>

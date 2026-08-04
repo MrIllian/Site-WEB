@@ -40,36 +40,54 @@ sont **fonctionnels**, mais branchés sur des données fictives en mémoire
 - **Statut de Beep** (`src/data/status.js`) : valeurs figées, pas de vrai
   ping vers le bot.
 
+## Architecture
+
+Même logique de séparation que sur les projets full-stack de l'équipe
+(ex. CookNest en Next.js/Prisma) : une couche **actions** pour les
+mutations, une couche **data** pour les modèles, une couche **lib** pour
+les utilitaires partagés — seule la techno change (Vue au lieu de
+Next.js, pas de vraie base de données).
+
+```
+index.html                 point d'entrée, import map (vue / vue-router auto-hébergés)
+src/main.js                 création de l'app Vue + router + directive click-outside
+src/App.js                   layout racine (header + router-view + footer)
+src/router/                  définition des routes (hash history)
+
+src/store/auth.js            état de session (mock) : isAuthenticated, user, login(), logout()
+src/data/                    couche "modèle" : fixtures réactives (serveurs, shop, profil, statut, crédits)
+src/actions/                 couche "mutation" : vote, sauvegarde serveur, achat, enchère, mise en vente,
+                              paramètres de profil — chaque action retourne { success, message? },
+                              c'est le point d'entrée à remplacer par de vrais appels API plus tard
+src/lib/                     utilitaires partagés : formatage (format.js), génération d'id (utils.js),
+                              validation de formulaire (validations.js)
+
+src/components/ui/           atomes réutilisables (sélecteur de serveur, vote, toggle, podium, marquee…)
+src/components/layout/       header / footer
+src/pages/                   une page par route, ne contient que l'état d'UI (formulaires, dropdowns) —
+                              toute la logique métier passe par src/actions/
+
+src/style/                   tokens (couleurs/typo), base, composants, pages
+assets/fonts/                 Bricolage Grotesque, Instrument Sans, Fragment Mono (auto-hébergées)
+vendor/                       Vue + Vue Router auto-hébergés (builds ESM navigateur)
+```
+
 ## Prochaines étapes pour brancher le vrai backend
 
 1. Remplacer le contenu de `src/store/auth.js` par un vrai flux OAuth2
    Discord (redirection vers `discord.com/oauth2/authorize`, échange du
    code contre un token côté serveur — jamais côté client).
-2. Remplacer les fichiers `src/data/*.js` par des appels `fetch()` vers
-   l'API du bot Beep (idéalement en gardant la même forme de données pour
-   ne pas avoir à toucher aux pages).
-3. Si besoin d'un vrai outillage (TypeScript strict, tests, minification,
+2. Dans `src/actions/*.js`, remplacer les mutations directes sur les
+   objets de `src/data/*.js` par des appels `fetch()` vers l'API du bot
+   Beep. Comme chaque action retourne déjà `{ success, message? }`, les
+   pages n'ont rien à changer.
+3. Remplacer les fichiers `src/data/*.js` par le résultat de ces appels
+   API (mêmes noms de champs pour ne pas casser les pages).
+4. Si besoin d'un vrai outillage (TypeScript strict, tests, minification,
    découpage en `.vue` SFC) : `npm create vite@latest` avec le template
-   `vue`, puis déplacer les fichiers de `src/` — la logique des composants
-   n'a pas besoin de changer, seule la syntaxe `template: \`...\`` devient
-   un bloc `<template>`.
-
-## Structure
-
-```
-index.html              point d'entrée, import map
-src/main.js              création de l'app Vue + router
-src/App.js                layout racine (header + router-view + footer)
-src/router/               définition des routes (hash history)
-src/store/auth.js         état d'authentification (mock)
-src/data/                 données simulées (serveurs, shop, profil, statut…)
-src/components/ui/        atomes réutilisables (bouton serveur, vote, toggle…)
-src/components/layout/    header / footer
-src/pages/                une page par route
-src/style/                tokens (couleurs/typo), base, composants, pages
-assets/fonts/              Bricolage Grotesque, Instrument Sans, Fragment Mono
-vendor/                    Vue + Vue Router auto-hébergés (builds ESM navigateur)
-```
+   `vue`, puis déplacer les fichiers de `src/` — la logique n'a pas besoin
+   de changer, seule la syntaxe `template: \`...\`` devient un bloc
+   `<template>`.
 
 ## Crédits
 

@@ -2,6 +2,8 @@ import { ref, computed } from "vue";
 import { auth } from "../store/auth.js";
 import { servers } from "../data/servers.js";
 import { adminShopByServer } from "../data/shop.js";
+import { buyAdminItem } from "../actions/shop.js";
+import { coins } from "../lib/format.js";
 import ServerPicker from "../components/ui/ServerPicker.js";
 
 export default {
@@ -15,21 +17,15 @@ export default {
     const justBought = ref(null);
 
     function buy(item) {
-      if (!auth.isAuthenticated || auth.user.pikaCoins < item.price) return;
-      auth.user.pikaCoins -= item.price;
-      auth.user.pikaCoinsHistory.unshift({
-        id: "h" + Date.now(),
-        label: "Achat — " + item.name,
-        delta: -item.price,
-        time: "à l'instant",
-      });
+      const result = buyAdminItem(item);
+      if (!result.success) return;
       justBought.value = item.id;
       setTimeout(() => {
         if (justBought.value === item.id) justBought.value = null;
       }, 1600);
     }
 
-    return { auth, availableServers, selectedId, items, justBought, buy };
+    return { auth, availableServers, selectedId, items, justBought, buy, coins };
   },
   template: /* html */ `
     <section class="wrap" style="padding-block:48px 90px;">
@@ -54,7 +50,7 @@ export default {
         </div>
         <div class="coin" style="font-size:20px;">
           <span class="coin__icon"></span>
-          <span v-if="auth.isAuthenticated">{{ auth.user.pikaCoins.toLocaleString('fr-FR') }} PikaCoins</span>
+          <span v-if="auth.isAuthenticated">{{ coins(auth.user.pikaCoins) }} PikaCoins</span>
           <span v-else class="mono" style="font-size:13px;color:var(--ink-3)">connectez-vous pour voir votre solde</span>
         </div>
       </div>
@@ -72,7 +68,7 @@ export default {
             <div class="item-card__meta" style="margin-top:6px;">{{ it.desc }}</div>
           </div>
           <div class="item-card__row">
-            <span class="coin"><span class="coin__icon"></span>{{ it.price.toLocaleString('fr-FR') }}</span>
+            <span class="coin"><span class="coin__icon"></span>{{ coins(it.price) }}</span>
             <button
               class="btn btn--sm"
               :class="justBought === it.id ? 'btn--subtle' : 'btn--primary'"
