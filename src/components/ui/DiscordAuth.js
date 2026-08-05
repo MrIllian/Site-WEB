@@ -17,7 +17,8 @@ export default {
     </div>
     <div v-else class="discord-auth" style="position:relative">
       <button class="user-chip" @click="menuOpen = !menuOpen">
-        <span class="user-chip__avatar">{{ auth.user.initials }}</span>
+        <img v-if="auth.user.avatar" :src="auth.user.avatar" class="user-chip__avatar user-chip__avatar--img" alt="" />
+        <span v-else class="user-chip__avatar">{{ auth.user.initials }}</span>
         <span class="user-chip__name">{{ auth.user.username }}</span>
       </button>
       <div v-if="menuOpen" class="server-picker__menu" style="right:0; left:auto; width:200px;" @mouseleave="menuOpen = false">

@@ -16,7 +16,7 @@ export default {
   name: "ServersPage",
   components: { ServerPicker, VoteControl, Podium, Toggle },
   setup() {
-    const adminServers = computed(() => servers.filter((s) => auth.adminServerIds.includes(s.id)));
+    const adminServers = computed(() => servers.filter((s) => s.guildId && auth.adminServerIds.includes(s.guildId)));
     const selectedId = ref(adminServers.value[0]?.id || null);
     const draft = reactive({ name: "", ip: "", port: 25565, description: "", tags: [], isPublic: false });
     const newTag = ref("");

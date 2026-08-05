@@ -1,49 +1,108 @@
-import { reactive } from "vue";
-import { currentUser } from "../data/profile.js";
-import { currentUserAdminServerIds } from "../data/servers.js";
+import { reactive, watch } from "vue";
+import { initials } from "../lib/format.js";
 
 /*
- * Authentification simulée : il n'y a pas de vrai flux OAuth2 Discord ici
- * (nécessite un client_id/secret d'application Discord côté bot Beep).
- * Le store expose la même forme de données qu'un vrai flux OAuth
- * renverrait, pour que le branchement futur ne touche que ce fichier.
+ * Authentification réelle via l'API OAuth2 Discord exposée par le
+ * backend (voir server/index.js). Le navigateur ne voit jamais le
+ * client_secret ni le token Discord : il ne fait que suivre la
+ * redirection /api/auth/login puis lire la session via /api/auth/me.
+ *
+ * Il n'y a pas encore de vraie base de données pour les PikaCoins,
+ * badges, etc. (ça viendra avec l'API du bot Beep). En attendant,
+ * l'identité (id, pseudo, avatar) est réelle, mais le reste du profil
+ * est un profil "par défaut" persisté localement par id Discord, pour
+ * que chaque personne qui se connecte ait bien SES propres données et
+ * pas celles de quelqu'un d'autre.
  */
-const STORAGE_KEY = "beep_demo_session";
+
+const PROFILE_KEY_PREFIX = "beep_profile_";
 
 const state = reactive({
   isAuthenticated: false,
   isLoading: false,
+  isReady: false, // devient true une fois le premier /api/auth/me résolu
   user: null,
   adminServerIds: [],
 });
 
-if (localStorage.getItem(STORAGE_KEY) === "1") {
-  state.user = currentUser;
-  state.adminServerIds = currentUserAdminServerIds;
-  state.isAuthenticated = true;
+function defaultProfile() {
+  return {
+    pikaCoins: 0,
+    pikaCoinsHistory: [],
+    settings: {
+      accent: "violet",
+      showBadges: true,
+      publicProfile: true,
+      compactCards: false,
+      bio: "",
+    },
+    badges: [],
+  };
 }
 
-async function login() {
-  if (state.isAuthenticated || state.isLoading) return;
+function loadLocalProfile(discordUser) {
+  const key = PROFILE_KEY_PREFIX + discordUser.id;
+  let persisted = {};
+  try {
+    persisted = JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    persisted = {};
+  }
+  return {
+    id: discordUser.id,
+    username: discordUser.username,
+    handle: discordUser.handle,
+    initials: initials(discordUser.username),
+    avatar: discordUser.avatar,
+    memberSince: persisted.memberSince || new Date().toISOString().slice(0, 10),
+    ...defaultProfile(),
+    ...persisted,
+  };
+}
+
+function persistLocalProfile() {
+  if (!state.user) return;
+  const { id, username, handle, initials: _initials, avatar, ...persisted } = state.user;
+  localStorage.setItem(PROFILE_KEY_PREFIX + id, JSON.stringify(persisted));
+}
+
+watch(() => state.user, persistLocalProfile, { deep: true });
+
+async function refresh() {
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    const data = await res.json();
+    if (data.user) {
+      state.user = loadLocalProfile(data.user);
+      state.adminServerIds = data.user.adminGuildIds || [];
+      state.isAuthenticated = true;
+    } else {
+      state.user = null;
+      state.adminServerIds = [];
+      state.isAuthenticated = false;
+    }
+  } catch {
+    // API indisponible (ex: prévisualisation statique sans backend) :
+    // on reste simplement déconnecté plutôt que de planter la page.
+    state.isAuthenticated = false;
+  } finally {
+    state.isReady = true;
+  }
+}
+
+function login() {
   state.isLoading = true;
-  await new Promise((resolve) => setTimeout(resolve, 700));
-  state.user = currentUser;
-  state.adminServerIds = currentUserAdminServerIds;
-  state.isAuthenticated = true;
-  state.isLoading = false;
-  localStorage.setItem(STORAGE_KEY, "1");
+  window.location.href = "/api/auth/login";
 }
 
-function logout() {
+async function logout() {
   state.isAuthenticated = false;
   state.user = null;
   state.adminServerIds = [];
-  localStorage.removeItem(STORAGE_KEY);
+  await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
 }
 
-// Not wrapped in readonly(): pages mutate nested fields directly
-// (auth.user.pikaCoins, auth.user.settings.*), same pattern as the
-// other mock data stores. isAuthenticated/user should still only be
-// set via login()/logout() below, by convention.
+refresh();
+
 export const auth = state;
-export const authActions = { login, logout };
+export const authActions = { login, logout, refresh };

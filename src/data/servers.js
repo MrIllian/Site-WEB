@@ -1,15 +1,26 @@
 import { reactive } from "vue";
 
+/*
+ * `guildId` doit être l'id du serveur Discord (guild) correspondant à ce
+ * serveur Minecraft — c'est ce qui permet de savoir si la personne
+ * connectée est administratrice de CE serveur précis (comparé à
+ * auth.adminServerIds, calculé depuis ses permissions Discord réelles,
+ * voir server/index.js et src/store/auth.js). Laissé à `null` tant que
+ * cette association n'est pas gérée par une vraie base de données côté
+ * bot Beep : renseignez-le pour un de vos serveurs si vous voulez tester
+ * le panneau d'administration avec un compte Discord réel.
+ */
+
 export const servers = reactive([
   {
     id: "srv1",
+    guildId: null,
     name: "Kaonyx SMP",
     ip: "play.kaonyx.net",
     port: 25565,
     description: "SMP semi-vanilla, économie de joueurs, claims LWC et évents mensuels. Ambiance calme, whitelist légère.",
     tags: ["SMP", "Survie", "Économie", "Whitelist"],
     isPublic: true,
-    ownerId: "u_demo",
     upvotes: 341,
     downvotes: 12,
     userVote: 0,
@@ -22,13 +33,13 @@ export const servers = reactive([
   },
   {
     id: "srv2",
+    guildId: null,
     name: "Voltaria Faction",
     ip: "voltaria.gg",
     port: 25565,
     description: "Serveur faction PvP avec cartes saisonnières, raid protégé la nuit et boutique cosmétique.",
     tags: ["Faction", "PvP", "Saisonnier"],
     isPublic: true,
-    ownerId: "u2",
     upvotes: 298,
     downvotes: 34,
     userVote: 0,
@@ -40,13 +51,13 @@ export const servers = reactive([
   },
   {
     id: "srv3",
+    guildId: null,
     name: "Petit Bois",
     ip: "petitbois.fr",
     port: 25577,
     description: "Petit serveur familial entre amis, coop et créatif partagé, pas de PvP forcé.",
     tags: ["Coop", "Créatif", "Familial"],
     isPublic: true,
-    ownerId: "u_demo",
     upvotes: 76,
     downvotes: 3,
     userVote: 0,
@@ -56,13 +67,13 @@ export const servers = reactive([
   },
   {
     id: "srv4",
+    guildId: null,
     name: "Néréïde RP",
     ip: "nereide-rp.fr",
     port: 25565,
     description: "Roleplay médiéval-fantastique, économie fermée, guildes et quêtes scénarisées par le staff.",
     tags: ["RP", "Médiéval", "Guildes"],
     isPublic: true,
-    ownerId: "u3",
     upvotes: 210,
     downvotes: 21,
     userVote: 0,
@@ -74,13 +85,13 @@ export const servers = reactive([
   },
   {
     id: "srv5",
+    guildId: null,
     name: "Blockrun",
     ip: "blockrun.eu",
     port: 25565,
     description: "Minijeux compétitifs : bedwars, skywars, parkour classé. Saisons de 6 semaines.",
     tags: ["Minijeux", "PvP", "Classé"],
     isPublic: true,
-    ownerId: "u4",
     upvotes: 654,
     downvotes: 58,
     userVote: 0,
@@ -93,13 +104,13 @@ export const servers = reactive([
   },
   {
     id: "srv6",
+    guildId: null,
     name: "Tessara Origins",
     ip: "tessara.net",
     port: 25565,
     description: "Modpack RPG (mods de progression et donjons), difficulté ajustée, coop 2-8 joueurs.",
     tags: ["Modpack", "RPG", "Donjons"],
     isPublic: false,
-    ownerId: "u_demo",
     upvotes: 18,
     downvotes: 1,
     userVote: 0,
@@ -108,8 +119,6 @@ export const servers = reactive([
     comments: [],
   },
 ]);
-
-export const currentUserAdminServerIds = ["srv1", "srv3", "srv6"];
 
 export function rankedServers() {
   return servers

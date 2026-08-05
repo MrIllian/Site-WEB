@@ -23,9 +23,10 @@ export default {
         <aside class="id-card bracketed" style="--corner-color: var(--brand);">
           <div class="id-card__banner"></div>
           <div class="id-card__body">
-            <div class="id-card__avatar">{{ auth.user.initials }}</div>
+            <img v-if="auth.user.avatar" :src="auth.user.avatar" class="id-card__avatar id-card__avatar--img" alt="" />
+            <div v-else class="id-card__avatar">{{ auth.user.initials }}</div>
             <h3 style="margin-top:14px; font-size:19px;">{{ auth.user.username }}</h3>
-            <div class="mono" style="font-size:12px; color:var(--ink-3); margin-top:2px;">@{{ auth.user.discriminator }}</div>
+            <div class="mono" style="font-size:12px; color:var(--ink-3); margin-top:2px;">@{{ auth.user.handle }}</div>
             <p style="font-size:13px; color:var(--ink-2); margin-top:14px; line-height:1.6;">{{ auth.user.settings.bio }}</p>
             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:16px;" v-if="auth.user.settings.showBadges">
               <span class="badge" :class="'badge--' + b.tone" v-for="b in auth.user.badges" :key="b.id">{{ b.label }}</span>
