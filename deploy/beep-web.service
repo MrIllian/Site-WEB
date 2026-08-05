@@ -1,0 +1,14 @@
+[Unit]
+Description=Beep - site web (OAuth Discord + serveur statique)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/Site-WEB
+ExecStart=/usr/bin/node server/index.js
+EnvironmentFile=/srv/Site-WEB/.env
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

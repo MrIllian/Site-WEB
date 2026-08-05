@@ -50,6 +50,12 @@ const REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const IS_PROD = process.env.NODE_ENV === "production";
 
+// Optionnelles : la connexion Discord marche sans, seules les routes
+// /api/servers/* renverront "bot_api_unavailable" tant qu'elles ne sont
+// pas configurées (le bot Beep tourne à côté, sur le même VPS).
+const BOT_API_URL = process.env.BOT_API_URL || "http://127.0.0.1:8787";
+const BOT_API_SECRET = process.env.BOT_API_SECRET;
+
 for (const [name, value] of Object.entries({
   DISCORD_CLIENT_ID: CLIENT_ID,
   DISCORD_CLIENT_SECRET: CLIENT_SECRET,
@@ -124,9 +130,9 @@ function clearCookie(res, name) {
 // Appels API Discord (module https natif, pas de dépendance fetch/axios)
 // ---------------------------------------------------------------------
 
-function requestJson({ method, hostname, path: reqPath, headers }, body) {
+function requestJson(client, { method, hostname, port, path: reqPath, headers }, body) {
   return new Promise((resolve, reject) => {
-    const req = https.request({ method, hostname, path: reqPath, headers }, (res) => {
+    const req = client.request({ method, hostname, port, path: reqPath, headers }, (res) => {
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
@@ -152,6 +158,7 @@ async function exchangeCodeForToken(code) {
     redirect_uri: REDIRECT_URI,
   }).toString();
   const { status, json } = await requestJson(
+    https,
     {
       method: "POST",
       hostname: "discord.com",
@@ -168,7 +175,7 @@ async function exchangeCodeForToken(code) {
 }
 
 async function fetchDiscordUser(accessToken) {
-  const { status, json } = await requestJson({
+  const { status, json } = await requestJson(https, {
     method: "GET",
     hostname: "discord.com",
     path: "/api/users/@me",
@@ -179,7 +186,7 @@ async function fetchDiscordUser(accessToken) {
 }
 
 async function fetchDiscordGuilds(accessToken) {
-  const { status, json } = await requestJson({
+  const { status, json } = await requestJson(https, {
     method: "GET",
     hostname: "discord.com",
     path: "/api/users/@me/guilds",
@@ -197,6 +204,69 @@ function avatarUrl(discordUser) {
 function isAdminGuild(guild) {
   const perms = BigInt(guild.permissions || 0);
   return (perms & ADMINISTRATOR) === ADMINISTRATOR || (perms & MANAGE_GUILD) === MANAGE_GUILD;
+}
+
+// ---------------------------------------------------------------------
+// API interne du bot Beep (même VPS, 127.0.0.1 uniquement). Le contrôle
+// "cette personne est admin de ce serveur Discord" se fait ICI, avec la
+// vraie session Discord OAuth, avant d'appeler le bot — voir
+// server/index.js côté bot (Beep/bot.py) pour le reste de la confiance.
+// ---------------------------------------------------------------------
+
+async function callBotApi(method, botPath, body) {
+  if (!BOT_API_SECRET) {
+    const err = new Error("BOT_API_SECRET non configuré");
+    err.code = "BOT_API_NOT_CONFIGURED";
+    throw err;
+  }
+  const target = new URL(botPath, BOT_API_URL);
+  const payload = body ? JSON.stringify(body) : null;
+  return requestJson(
+    http,
+    {
+      method,
+      hostname: target.hostname,
+      port: target.port,
+      path: target.pathname + target.search,
+      headers: {
+        "X-Internal-Secret": BOT_API_SECRET,
+        ...(payload
+          ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) }
+          : {}),
+      },
+    },
+    payload
+  );
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => (data += chunk));
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function getSession(req) {
+  const cookies = parseCookies(req);
+  return unsign(cookies[SESSION_COOKIE]);
+}
+
+async function relayToBotApi(res, method, botPath, body) {
+  try {
+    const { status, json } = await callBotApi(method, botPath, body);
+    res.writeHead(status, { "Content-Type": "application/json" }).end(JSON.stringify(json));
+  } catch (err) {
+    console.error(err);
+    res.writeHead(503, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "bot_api_unavailable" }));
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -264,12 +334,14 @@ async function handleCallback(req, res, url) {
     fetchDiscordGuilds(token.access_token),
   ]);
 
+  const adminGuilds = guilds.filter(isAdminGuild).map((g) => ({ id: g.id, name: g.name }));
   const session = {
     id: discordUser.id,
     username: discordUser.global_name || discordUser.username,
     handle: discordUser.username,
     avatar: avatarUrl(discordUser),
-    adminGuildIds: guilds.filter(isAdminGuild).map((g) => g.id),
+    adminGuilds,
+    adminGuildIds: adminGuilds.map((g) => g.id),
     exp: Date.now() + SESSION_MAX_AGE * 1000,
   };
   setCookie(res, SESSION_COOKIE, sign(session), { maxAge: SESSION_MAX_AGE });
@@ -287,6 +359,57 @@ function handleLogout(req, res) {
   res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ success: true }));
 }
 
+function handleListServers(req, res) {
+  return relayToBotApi(res, "GET", "/internal/servers");
+}
+
+function handleGetServer(req, res, guildId) {
+  const session = getSession(req);
+  if (!session || !session.adminGuildIds.includes(guildId)) {
+    res.writeHead(403, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "forbidden" }));
+    return;
+  }
+  return relayToBotApi(res, "GET", `/internal/guilds/${guildId}/minecraft`);
+}
+
+async function handleUpdateServer(req, res, guildId) {
+  const session = getSession(req);
+  if (!session || !session.adminGuildIds.includes(guildId)) {
+    res.writeHead(403, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "forbidden" }));
+    return;
+  }
+  const body = await readJsonBody(req);
+  return relayToBotApi(res, "PATCH", `/internal/guilds/${guildId}/minecraft`, body);
+}
+
+async function handleVote(req, res, guildId) {
+  const session = getSession(req);
+  if (!session) {
+    res.writeHead(401, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }));
+    return;
+  }
+  const body = await readJsonBody(req);
+  const direction = [1, -1, 0].includes(body.direction) ? body.direction : 0;
+  return relayToBotApi(res, "POST", `/internal/guilds/${guildId}/minecraft/vote`, {
+    userId: session.id,
+    direction,
+  });
+}
+
+async function handleComment(req, res, guildId) {
+  const session = getSession(req);
+  if (!session) {
+    res.writeHead(401, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }));
+    return;
+  }
+  const body = await readJsonBody(req);
+  return relayToBotApi(res, "POST", `/internal/guilds/${guildId}/minecraft/comments`, {
+    userId: session.id,
+    userName: session.username,
+    body: body.body,
+  });
+}
+
 const server = http.createServer((req, res) => {
   Promise.resolve()
     .then(async () => {
@@ -295,6 +418,16 @@ const server = http.createServer((req, res) => {
       if (url.pathname === "/api/auth/callback") return handleCallback(req, res, url);
       if (url.pathname === "/api/auth/me") return handleMe(req, res);
       if (url.pathname === "/api/auth/logout" && req.method === "POST") return handleLogout(req, res);
+
+      if (url.pathname === "/api/servers" && req.method === "GET") return handleListServers(req, res);
+      const detailMatch = url.pathname.match(/^\/api\/servers\/(\d+)$/);
+      if (detailMatch && req.method === "GET") return handleGetServer(req, res, detailMatch[1]);
+      if (detailMatch && req.method === "PATCH") return handleUpdateServer(req, res, detailMatch[1]);
+      const voteMatch = url.pathname.match(/^\/api\/servers\/(\d+)\/vote$/);
+      if (voteMatch && req.method === "POST") return handleVote(req, res, voteMatch[1]);
+      const commentMatch = url.pathname.match(/^\/api\/servers\/(\d+)\/comments$/);
+      if (commentMatch && req.method === "POST") return handleComment(req, res, commentMatch[1]);
+
       return serveStatic(req, res, url.pathname);
     })
     .catch((err) => {

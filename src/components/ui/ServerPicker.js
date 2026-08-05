@@ -28,7 +28,7 @@ export default {
         <span class="server-picker__icon">{{ current ? initials(current.name) : '—' }}</span>
         <span class="server-picker__meta">
           <span class="server-picker__name">{{ current ? current.name : placeholder }}</span>
-          <span class="server-picker__sub" v-if="current">{{ current.ip }}</span>
+          <span class="server-picker__sub" v-if="current && current.ip">{{ current.ip }}</span>
         </span>
         <span class="server-picker__caret"></span>
       </button>

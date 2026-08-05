@@ -23,6 +23,7 @@ const state = reactive({
   isReady: false, // devient true une fois le premier /api/auth/me résolu
   user: null,
   adminServerIds: [],
+  adminGuilds: [], // [{ id, name }] — serveurs Discord où la personne est admin
 });
 
 function defaultProfile() {
@@ -75,10 +76,12 @@ async function refresh() {
     if (data.user) {
       state.user = loadLocalProfile(data.user);
       state.adminServerIds = data.user.adminGuildIds || [];
+      state.adminGuilds = data.user.adminGuilds || [];
       state.isAuthenticated = true;
     } else {
       state.user = null;
       state.adminServerIds = [];
+      state.adminGuilds = [];
       state.isAuthenticated = false;
     }
   } catch {
@@ -99,6 +102,7 @@ async function logout() {
   state.isAuthenticated = false;
   state.user = null;
   state.adminServerIds = [];
+  state.adminGuilds = [];
   await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
 }
 

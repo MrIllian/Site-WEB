@@ -119,10 +119,3 @@ export const servers = reactive([
     comments: [],
   },
 ]);
-
-export function rankedServers() {
-  return servers
-    .filter((s) => s.isPublic)
-    .slice()
-    .sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
-}
