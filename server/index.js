@@ -367,6 +367,10 @@ function handleBotProfile(req, res) {
   return relayToBotApi(res, "GET", "/internal/bot-profile");
 }
 
+function handleCommands(req, res) {
+  return relayToBotApi(res, "GET", "/internal/commands");
+}
+
 function handleGetServer(req, res, guildId) {
   const session = getSession(req);
   if (!session || !session.adminGuildIds.includes(guildId)) {
@@ -424,6 +428,7 @@ const server = http.createServer((req, res) => {
       if (url.pathname === "/api/auth/logout" && req.method === "POST") return handleLogout(req, res);
 
       if (url.pathname === "/api/bot-profile" && req.method === "GET") return handleBotProfile(req, res);
+      if (url.pathname === "/api/commands" && req.method === "GET") return handleCommands(req, res);
 
       if (url.pathname === "/api/servers" && req.method === "GET") return handleListServers(req, res);
       const detailMatch = url.pathname.match(/^\/api\/servers\/(\d+)$/);

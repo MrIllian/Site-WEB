@@ -8,6 +8,7 @@ const routes = [
   { path: "/profil", name: "profile", component: () => import("../pages/ProfilePage.js") },
   { path: "/inventaire", name: "inventory", component: () => import("../pages/InventoryPage.js") },
   { path: "/statut", name: "status", component: () => import("../pages/StatusPage.js") },
+  { path: "/index", name: "commands-index", component: () => import("../pages/IndexPage.js") },
   { path: "/credits", name: "credits", component: () => import("../pages/CreditsPage.js") },
   { path: "/:pathMatch(.*)*", redirect: "/" },
 ];

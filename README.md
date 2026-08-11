@@ -100,12 +100,18 @@ pour l'instant (voir plus bas).
 ## Ce qui est réel vs simulé
 
 - **Connexion Discord** : réelle.
-- **Profil de Beep sur la page d'accueil** (avatar, bannière,
-  description) : réel — `GET /api/bot-profile`, relayé vers le vrai
-  profil Discord du bot (`Beep/bot.py`, `bot.fetch_user` +
-  `application_info()`). Se rabat sur les valeurs fictives si le champ
-  correspondant n'est pas défini sur Discord (ex. pas de bannière) ou si
-  le bot est injoignable.
+- **Profil de Beep** (avatar, bannière, description, `#discriminateur`,
+  date de création, numéro de version) : réel — `GET /api/bot-profile`,
+  relayé vers le vrai profil Discord du bot (`Beep/bot.py`,
+  `bot.fetch_user` + `application_info()` + la constante `VERSION`).
+  Partagé par toute l'app via `src/store/botProfile.js` (un seul fetch,
+  pas un numéro de version différent par page). Se rabat sur les valeurs
+  fictives si un champ n'est pas défini sur Discord (ex. pas de
+  bannière) ou si le bot est injoignable.
+- **Index des commandes** (`/index`) : réel — `GET /api/commands` lit
+  directement l'arbre de commandes du bot (`bot.tree.get_commands()`),
+  jamais recopié à la main donc jamais désynchronisé quand une commande
+  est ajoutée/renommée/retirée côté bot.
 - **Serveurs Minecraft, votes, commentaires** : réels, stockés dans
   `Beep/config.json` via l'API interne du bot (voir ci-dessus).
 - **PikaCoins, badges, réglages de profil** (`src/store/auth.js`) : pas
@@ -139,10 +145,11 @@ server/index.js              backend Node : OAuth2 Discord, proxy /api/servers* 
 .env.example                 variables d'environnement attendues par server/index.js
 
 src/store/auth.js            session réelle : lit /api/auth/me, login()/logout() via l'API
+src/store/botProfile.js      profil Discord réel de Beep, partagé par toute l'app (un seul fetch)
 src/data/                    couche "modèle" restante : fixtures réactives pour ce qui n'est
                               pas encore branché au bot (shop, inventaire, statut, crédits)
-src/actions/                 couche "mutation" : servers.js parle au vrai bot (fetch), les
-                              autres (shop.js, profile.js) mutent encore des données locales —
+src/actions/                 couche "mutation" : servers.js et bot.js parlent au vrai bot (fetch),
+                              shop.js/profile.js mutent encore des données locales —
                               chaque action retourne { success, message? }
 src/lib/                     utilitaires partagés : formatage (format.js), génération d'id
                               (utils.js), validation de formulaire (validations.js)

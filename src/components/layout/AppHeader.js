@@ -1,6 +1,7 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import DiscordAuth from "../ui/DiscordAuth.js";
 import { bot } from "../../data/bot.js";
+import { botProfile } from "../../store/botProfile.js";
 
 const links = [
   { to: "/", label: "Accueil" },
@@ -9,6 +10,7 @@ const links = [
   { to: "/shop-joueurs", label: "Shop joueurs" },
   { to: "/inventaire", label: "Inventaire" },
   { to: "/statut", label: "Statut" },
+  { to: "/index", label: "Index" },
   { to: "/credits", label: "Crédits" },
 ];
 
@@ -17,7 +19,8 @@ export default {
   components: { DiscordAuth },
   setup() {
     const mobileOpen = ref(false);
-    return { links, mobileOpen, bot };
+    const displayVersion = computed(() => (botProfile.profile?.version ? `v${botProfile.profile.version}` : bot.version));
+    return { links, mobileOpen, bot, displayVersion };
   },
   template: /* html */ `
     <header class="site-header">
@@ -27,7 +30,7 @@ export default {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="2" fill="currentColor"/><circle cx="15.5" cy="12" r="2" fill="currentColor"/></svg>
           </span>
           Beep
-          <span class="brand__version mono">{{ bot.version }}</span>
+          <span class="brand__version mono">{{ displayVersion }}</span>
         </router-link>
 
         <nav class="site-nav">

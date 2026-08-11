@@ -1,9 +1,12 @@
+import { computed } from "vue";
 import { bot } from "../../data/bot.js";
+import { botProfile } from "../../store/botProfile.js";
 
 export default {
   name: "AppFooter",
   setup() {
-    return { bot, year: new Date().getFullYear() };
+    const displayVersion = computed(() => (botProfile.profile?.version ? `v${botProfile.profile.version}` : bot.version));
+    return { bot, displayVersion, year: new Date().getFullYear() };
   },
   template: /* html */ `
     <footer class="site-footer">
@@ -13,7 +16,7 @@ export default {
             <span class="brand__mark">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="2" fill="currentColor"/><circle cx="15.5" cy="12" r="2" fill="currentColor"/></svg>
             </span>
-            Beep <span class="brand__version mono">{{ bot.version }}</span>
+            Beep <span class="brand__version mono">{{ displayVersion }}</span>
           </div>
           <p>Compagnon Discord pour serveurs Minecraft — classements, shops, économie et supervision, sans quitter votre serveur.</p>
         </div>
@@ -23,6 +26,7 @@ export default {
             <router-link to="/serveurs">Serveurs Minecraft</router-link>
             <router-link to="/shop-joueurs">Shop inter-joueurs</router-link>
             <router-link to="/statut">Statut de Beep</router-link>
+            <router-link to="/index">Index des commandes</router-link>
             <router-link to="/credits">Crédits</router-link>
           </div>
         </div>
@@ -31,7 +35,7 @@ export default {
           <div style="display:flex; flex-direction:column; gap:8px;">
             <a href="#">Serveur Discord</a>
             <a href="#">Inviter Beep</a>
-            <a href="#">Documentation</a>
+            <router-link to="/index">Documentation</router-link>
           </div>
         </div>
       </div>

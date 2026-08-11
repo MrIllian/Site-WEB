@@ -1,25 +1,24 @@
-import { ref, onMounted, computed } from "vue";
+import { computed } from "vue";
 import Marquee from "../components/ui/Marquee.js";
 import { bot, news, ticker } from "../data/bot.js";
-import { fetchBotProfile } from "../actions/bot.js";
+import { botProfile } from "../store/botProfile.js";
+import { formatDate } from "../lib/format.js";
 
 export default {
   name: "HomePage",
   components: { Marquee },
   setup() {
-    const realProfile = ref(null);
-    onMounted(async () => {
-      const result = await fetchBotProfile();
-      if (result.success) realProfile.value = result.profile;
-    });
-
-    const displayName = computed(() => realProfile.value?.username || bot.name);
-    const displayBio = computed(() => realProfile.value?.description || bot.bio);
+    const profile = computed(() => botProfile.profile);
+    const displayName = computed(() => profile.value?.username || bot.name);
+    const displayHandle = computed(() => (profile.value?.discriminator ? `#${profile.value.discriminator}` : null));
+    const displayBio = computed(() => profile.value?.description || bot.bio);
+    const displayVersion = computed(() => (profile.value?.version ? `Bêta v${profile.value.version}` : `${bot.version} ${bot.codename}`));
+    const displayCreatedAt = computed(() => (profile.value?.createdAt ? formatDate(profile.value.createdAt) : "janv. 2022"));
     const bannerStyle = computed(() =>
-      realProfile.value?.banner ? { backgroundImage: `url(${realProfile.value.banner})`, backgroundSize: "cover", backgroundPosition: "center" } : {}
+      profile.value?.banner ? { backgroundImage: `url(${profile.value.banner})`, backgroundSize: "cover", backgroundPosition: "center" } : {}
     );
 
-    return { bot, news, ticker, realProfile, displayName, displayBio, bannerStyle };
+    return { bot, news, ticker, profile, displayName, displayHandle, displayBio, displayVersion, displayCreatedAt, bannerStyle };
   },
   template: /* html */ `
     <section class="hero wrap">
@@ -47,21 +46,21 @@ export default {
           <div class="profile-card__banner" :style="bannerStyle"></div>
           <div class="profile-card__body">
             <div class="profile-card__avatar">
-              <img v-if="realProfile && realProfile.avatar" :src="realProfile.avatar" class="profile-card__avatar-img" alt="" />
+              <img v-if="profile && profile.avatar" :src="profile.avatar" class="profile-card__avatar-img" alt="" />
               <svg v-else width="30" height="30" viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="2" fill="currentColor"/><circle cx="15.5" cy="12" r="2" fill="currentColor"/></svg>
               <span class="profile-card__status"></span>
             </div>
             <div class="profile-card__name">{{ displayName }} <span class="mono" style="font-size:12px;color:var(--ink-3);font-weight:400;">BOT</span></div>
-            <div class="profile-card__handle mono">{{ bot.tag }} — {{ bot.version }}</div>
+            <div class="profile-card__handle mono">{{ displayHandle || bot.tag }}</div>
             <p class="profile-card__bio">{{ displayBio }}</p>
             <div class="profile-card__divider"></div>
             <div class="profile-card__row">
               <span class="eyebrow" style="font-size:10.5px;">Membre depuis</span>
-              <span class="mono" style="font-size:12.5px;color:var(--ink-2)">janv. 2022</span>
+              <span class="mono" style="font-size:12.5px;color:var(--ink-2)">{{ displayCreatedAt }}</span>
             </div>
             <div class="profile-card__row">
               <span class="eyebrow" style="font-size:10.5px;">Version</span>
-              <span class="badge badge--brand">{{ bot.version }} {{ bot.codename }}</span>
+              <span class="badge badge--brand">{{ displayVersion }}</span>
             </div>
           </div>
         </div>

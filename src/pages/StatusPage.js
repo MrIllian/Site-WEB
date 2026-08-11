@@ -1,10 +1,13 @@
+import { computed } from "vue";
 import { beepStatus } from "../data/status.js";
 import { bot } from "../data/bot.js";
+import { botProfile } from "../store/botProfile.js";
 
 export default {
   name: "StatusPage",
   setup() {
-    return { beepStatus, bot };
+    const displayVersion = computed(() => (botProfile.profile?.version ? `v${botProfile.profile.version}` : bot.version));
+    return { beepStatus, bot, displayVersion };
   },
   template: /* html */ `
     <section class="wrap" style="padding-block:48px 90px;">
@@ -12,7 +15,7 @@ export default {
         <div>
           <span class="eyebrow" style="margin-bottom:10px;">Supervision en direct</span>
           <h2>Statut de Beep</h2>
-          <p style="color:var(--ink-3); font-size:14px; margin-top:6px;">Dernier redémarrage {{ beepStatus.lastRestart }} · {{ bot.version }}</p>
+          <p style="color:var(--ink-3); font-size:14px; margin-top:6px;">Dernier redémarrage {{ beepStatus.lastRestart }} · {{ displayVersion }}</p>
         </div>
         <span class="status-pill" :class="beepStatus.online ? 'status-pill--online' : 'status-pill--offline'">
           <span class="dot dot--pulse"></span>
@@ -35,7 +38,7 @@ export default {
         </div>
         <div class="stat-tile">
           <div class="stat-tile__label"><span class="dot" style="color:var(--cyan)"></span>Version</div>
-          <div class="stat-tile__value mono" style="color:var(--cyan)">{{ bot.version }}</div>
+          <div class="stat-tile__value mono" style="color:var(--cyan)">{{ displayVersion }}</div>
         </div>
       </div>
 

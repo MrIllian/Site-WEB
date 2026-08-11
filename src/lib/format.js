@@ -19,3 +19,8 @@ export function relativeTime(epochSeconds) {
   if (diffD < 30) return `il y a ${diffD} j`;
   return new Date(epochSeconds * 1000).toLocaleDateString("fr-FR");
 }
+
+export function formatDate(isoString) {
+  if (!isoString) return "";
+  return new Date(isoString).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+}

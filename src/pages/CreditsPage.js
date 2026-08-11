@@ -1,10 +1,13 @@
+import { computed } from "vue";
 import { credits } from "../data/credits.js";
 import { bot } from "../data/bot.js";
+import { botProfile } from "../store/botProfile.js";
 
 export default {
   name: "CreditsPage",
   setup() {
-    return { credits, bot };
+    const displayVersion = computed(() => (botProfile.profile?.version ? `v${botProfile.profile.version}` : bot.version));
+    return { credits, bot, displayVersion };
   },
   template: /* html */ `
     <section class="wrap" style="padding-block:48px 90px;">
@@ -12,7 +15,7 @@ export default {
         <div>
           <span class="eyebrow" style="margin-bottom:10px;">Derrière Beep</span>
           <h2>Crédits</h2>
-          <p>{{ bot.version }} — l'équipe qui fait tourner Beep au quotidien.</p>
+          <p>{{ displayVersion }} — l'équipe qui fait tourner Beep au quotidien.</p>
         </div>
       </div>
 
