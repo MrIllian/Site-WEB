@@ -100,6 +100,12 @@ pour l'instant (voir plus bas).
 ## Ce qui est réel vs simulé
 
 - **Connexion Discord** : réelle.
+- **Profil de Beep sur la page d'accueil** (avatar, bannière,
+  description) : réel — `GET /api/bot-profile`, relayé vers le vrai
+  profil Discord du bot (`Beep/bot.py`, `bot.fetch_user` +
+  `application_info()`). Se rabat sur les valeurs fictives si le champ
+  correspondant n'est pas défini sur Discord (ex. pas de bannière) ou si
+  le bot est injoignable.
 - **Serveurs Minecraft, votes, commentaires** : réels, stockés dans
   `Beep/config.json` via l'API interne du bot (voir ci-dessus).
 - **PikaCoins, badges, réglages de profil** (`src/store/auth.js`) : pas

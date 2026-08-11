@@ -1,11 +1,25 @@
+import { ref, onMounted, computed } from "vue";
 import Marquee from "../components/ui/Marquee.js";
 import { bot, news, ticker } from "../data/bot.js";
+import { fetchBotProfile } from "../actions/bot.js";
 
 export default {
   name: "HomePage",
   components: { Marquee },
   setup() {
-    return { bot, news, ticker };
+    const realProfile = ref(null);
+    onMounted(async () => {
+      const result = await fetchBotProfile();
+      if (result.success) realProfile.value = result.profile;
+    });
+
+    const displayName = computed(() => realProfile.value?.username || bot.name);
+    const displayBio = computed(() => realProfile.value?.description || bot.bio);
+    const bannerStyle = computed(() =>
+      realProfile.value?.banner ? { backgroundImage: `url(${realProfile.value.banner})`, backgroundSize: "cover", backgroundPosition: "center" } : {}
+    );
+
+    return { bot, news, ticker, realProfile, displayName, displayBio, bannerStyle };
   },
   template: /* html */ `
     <section class="hero wrap">
@@ -30,15 +44,16 @@ export default {
         </div>
 
         <div class="profile-card bracketed">
-          <div class="profile-card__banner"></div>
+          <div class="profile-card__banner" :style="bannerStyle"></div>
           <div class="profile-card__body">
             <div class="profile-card__avatar">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="2" fill="currentColor"/><circle cx="15.5" cy="12" r="2" fill="currentColor"/></svg>
+              <img v-if="realProfile && realProfile.avatar" :src="realProfile.avatar" class="profile-card__avatar-img" alt="" />
+              <svg v-else width="30" height="30" viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="2" fill="currentColor"/><circle cx="15.5" cy="12" r="2" fill="currentColor"/></svg>
               <span class="profile-card__status"></span>
             </div>
-            <div class="profile-card__name">Beep <span class="mono" style="font-size:12px;color:var(--ink-3);font-weight:400;">BOT</span></div>
+            <div class="profile-card__name">{{ displayName }} <span class="mono" style="font-size:12px;color:var(--ink-3);font-weight:400;">BOT</span></div>
             <div class="profile-card__handle mono">{{ bot.tag }} — {{ bot.version }}</div>
-            <p class="profile-card__bio">{{ bot.bio }}</p>
+            <p class="profile-card__bio">{{ displayBio }}</p>
             <div class="profile-card__divider"></div>
             <div class="profile-card__row">
               <span class="eyebrow" style="font-size:10.5px;">Membre depuis</span>
