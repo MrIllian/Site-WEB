@@ -31,7 +31,7 @@ export default {
             tout se pilote depuis Discord, et se consulte ici.
           </p>
           <div class="hero__cta">
-            <a href="#" class="btn btn--primary">Inviter Beep sur mon serveur</a>
+            <a href="/api/invite" class="btn btn--primary">Inviter Beep sur mon serveur</a>
             <router-link to="/serveurs" class="btn btn--ghost">Voir le classement</router-link>
           </div>
           <div class="hero__stats">

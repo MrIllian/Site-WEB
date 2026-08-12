@@ -312,6 +312,22 @@ function serveStatic(req, res, pathname) {
 // Routes
 // ---------------------------------------------------------------------
 
+// Permissions minimales dont Beep a réellement besoin, calculées depuis
+// les actions Discord présentes dans bot.py (pas "Administrateur") :
+// Gérer les salons (tickets), Ajouter des réactions, Voir les salons,
+// Envoyer des messages, Intégrer des liens, Joindre des fichiers,
+// Historique des messages, Déplacer des membres (/vockick), Gérer les
+// rôles (achats de rangs), Utiliser les commandes d'application.
+const BOT_INVITE_PERMISSIONS = "2432814160";
+
+async function handleInvite(req, res) {
+  const inviteUrl = new URL("https://discord.com/oauth2/authorize");
+  inviteUrl.searchParams.set("client_id", CLIENT_ID);
+  inviteUrl.searchParams.set("permissions", BOT_INVITE_PERMISSIONS);
+  inviteUrl.searchParams.set("scope", "bot applications.commands");
+  res.writeHead(302, { Location: inviteUrl.toString() }).end();
+}
+
 async function handleLogin(req, res) {
   const state = crypto.randomBytes(16).toString("hex");
   setCookie(res, STATE_COOKIE, state, { maxAge: 600 });
@@ -428,6 +444,8 @@ const server = http.createServer((req, res) => {
   Promise.resolve()
     .then(async () => {
       const url = new URL(req.url, `http://${req.headers.host}`);
+      if (url.pathname === "/api/invite") return handleInvite(req, res);
+
       if (url.pathname === "/api/auth/login") return handleLogin(req, res);
       if (url.pathname === "/api/auth/callback") return handleCallback(req, res, url);
       if (url.pathname === "/api/auth/me") return handleMe(req, res);

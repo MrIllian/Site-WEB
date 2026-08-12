@@ -6,7 +6,7 @@ export default {
   name: "AppFooter",
   setup() {
     const displayVersion = computed(() => (botProfile.profile?.version ? `v${botProfile.profile.version}` : bot.version));
-    return { bot, displayVersion, year: new Date().getFullYear() };
+    return { bot, botProfile, displayVersion, year: new Date().getFullYear() };
   },
   template: /* html */ `
     <footer class="site-footer">
@@ -14,7 +14,8 @@ export default {
         <div style="max-width:320px;">
           <div class="brand" style="margin-bottom:10px;">
             <span class="brand__mark">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="2" fill="currentColor"/><circle cx="15.5" cy="12" r="2" fill="currentColor"/></svg>
+              <img v-if="botProfile.profile?.avatar" :src="botProfile.profile.avatar" alt="" class="brand__mark-img" />
+              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="12" r="2" fill="currentColor"/><circle cx="15.5" cy="12" r="2" fill="currentColor"/></svg>
             </span>
             Beep <span class="brand__version mono">{{ displayVersion }}</span>
           </div>
@@ -34,7 +35,7 @@ export default {
           <div class="eyebrow" style="margin-bottom:12px;">Communauté</div>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <a href="#">Serveur Discord</a>
-            <a href="#">Inviter Beep</a>
+            <a href="/api/invite">Inviter Beep</a>
             <router-link to="/index">Documentation</router-link>
           </div>
         </div>
