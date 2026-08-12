@@ -298,7 +298,13 @@ function serveStatic(req, res, pathname) {
       return;
     }
     const ext = path.extname(filePath);
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" }).end(data);
+    res.writeHead(200, {
+      "Content-Type": MIME[ext] || "application/octet-stream",
+      // Pas de hash dans les noms de fichiers (pas de build) : on force
+      // le navigateur à revalider à chaque requête plutôt que de garder
+      // une vieille version en cache après un déploiement.
+      "Cache-Control": "no-cache",
+    }).end(data);
   });
 }
 
