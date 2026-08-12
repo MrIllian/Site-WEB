@@ -1,8 +1,8 @@
 export const bot = {
   name: "Beep",
-  tag: "Beep#0001",
-  version: "v2.7.3",
-  codename: "« Redstone Whisper »",
+  tag: "Beep#9080",
+  version: "v0.8.7",
+  codename: "« Bêta »",
   banner: true,
   bio: "petit compagnon qui veille sur vos serveurs Minecraft depuis Discord. ping, whitelist, classements, shops, économie — beep s'occupe du reste pendant que vous jouez.",
   invite: "#",
