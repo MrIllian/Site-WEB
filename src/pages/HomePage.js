@@ -13,7 +13,7 @@ export default {
     const displayHandle = computed(() => (profile.value?.discriminator ? `#${profile.value.discriminator}` : null));
     const displayBio = computed(() => profile.value?.description || bot.bio);
     const displayVersion = computed(() => (profile.value?.version ? `Bêta v${profile.value.version}` : `${bot.version} ${bot.codename}`));
-    const displayCreatedAt = computed(() => (profile.value?.createdAt ? formatDate(profile.value.createdAt) : "janv. 2022"));
+    const displayCreatedAt = computed(() => formatDate(profile.value?.createdAt || "2026-05-20"));
     const bannerStyle = computed(() =>
       profile.value?.banner ? { backgroundImage: `url(${profile.value.banner})`, backgroundSize: "cover", backgroundPosition: "center" } : {}
     );
@@ -55,7 +55,7 @@ export default {
             <p class="profile-card__bio">{{ displayBio }}</p>
             <div class="profile-card__divider"></div>
             <div class="profile-card__row">
-              <span class="eyebrow" style="font-size:10.5px;">Membre depuis</span>
+              <span class="eyebrow" style="font-size:10.5px;">Créé le</span>
               <span class="mono" style="font-size:12.5px;color:var(--ink-2)">{{ displayCreatedAt }}</span>
             </div>
             <div class="profile-card__row">
