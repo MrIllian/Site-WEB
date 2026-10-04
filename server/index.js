@@ -476,6 +476,15 @@ function handleMyMarkets(req, res) {
   return relayToBotApi(res, "GET", `/internal/users/${session.id}/market`);
 }
 
+function handleMyInventory(req, res) {
+  const session = getSession(req);
+  if (!session) {
+    res.writeHead(401, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }));
+    return;
+  }
+  return relayToBotApi(res, "GET", `/internal/users/${session.id}/inventory`);
+}
+
 async function handleMarketAction(req, res, botPath, withBody) {
   const session = getSession(req);
   if (!session) {
@@ -521,6 +530,7 @@ const server = http.createServer((req, res) => {
       const buyMatch = url.pathname.match(/^\/api\/shops\/(\d+)\/items\/(\d+)\/buy$/);
       if (buyMatch && req.method === "POST") return handleShopBuy(req, res, buyMatch[1], buyMatch[2]);
 
+      if (url.pathname === "/api/inventory" && req.method === "GET") return handleMyInventory(req, res);
       if (url.pathname === "/api/market" && req.method === "GET") return handleMyMarkets(req, res);
       const marketCreateMatch = url.pathname.match(/^\/api\/market\/(\d+)\/listings$/);
       if (marketCreateMatch && req.method === "POST") {
