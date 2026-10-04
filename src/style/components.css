@@ -440,8 +440,9 @@
   color: var(--amber);
 }
 .coin__icon {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffe6a8, var(--amber) 70%);
+  /* Taille relative au texte : plus grande dans la bande « solde ». */
+  width: max(18px, 1.15em); height: max(18px, 1.15em);
+  background: url("/assets/img/pikacoin.png") center / contain no-repeat;
   flex: none;
 }
 
