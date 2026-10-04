@@ -36,3 +36,17 @@ export async function fetchStats() {
   if (!json) return { success: false };
   return { success: true, stats: json };
 }
+
+// Registre des systèmes de Beep (fonctionnalités + état géré avec /systeme).
+export async function fetchSystems() {
+  let res;
+  try {
+    res = await fetch("/api/systems", { credentials: "include" });
+  } catch {
+    return { success: false, systems: [] };
+  }
+  if (!res.ok) return { success: false, systems: [] };
+  const json = await res.json().catch(() => null);
+  if (!Array.isArray(json)) return { success: false, systems: [] };
+  return { success: true, systems: json };
+}

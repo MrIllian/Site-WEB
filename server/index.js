@@ -393,6 +393,10 @@ function handleCommands(req, res) {
   return relayToBotApi(res, "GET", "/internal/commands");
 }
 
+function handleSystems(req, res) {
+  return relayToBotApi(res, "GET", "/internal/systems");
+}
+
 function handleStats(req, res) {
   return relayToBotApi(res, "GET", "/internal/stats");
 }
@@ -516,6 +520,7 @@ const server = http.createServer((req, res) => {
       if (url.pathname === "/api/bot-profile" && req.method === "GET") return handleBotProfile(req, res);
       if (url.pathname === "/api/commands" && req.method === "GET") return handleCommands(req, res);
       if (url.pathname === "/api/stats" && req.method === "GET") return handleStats(req, res);
+      if (url.pathname === "/api/systems" && req.method === "GET") return handleSystems(req, res);
 
       if (url.pathname === "/api/servers" && req.method === "GET") return handleListServers(req, res);
       const detailMatch = url.pathname.match(/^\/api\/servers\/(\d+)$/);
