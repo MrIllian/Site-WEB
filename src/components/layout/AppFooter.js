@@ -25,7 +25,7 @@ export default {
           <div class="eyebrow" style="margin-bottom:12px;">Navigation</div>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <router-link to="/serveurs">Serveurs Minecraft</router-link>
-            <router-link to="/shop-joueurs">Shop inter-joueurs</router-link>
+            <router-link to="/shop-joueurs">Marché</router-link>
             <router-link to="/statut">Statut de Beep</router-link>
             <router-link to="/index">Index des commandes</router-link>
             <router-link to="/credits">Crédits</router-link>

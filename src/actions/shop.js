@@ -32,7 +32,7 @@ export async function buyShopItem(guildId, itemId) {
   return { success: true, message: json.message, item: json.item, balance: json.balance };
 }
 
-// Marché inter-joueurs réel (/market du bot) : un marché par serveur
+// Marché inter-membres réel (/market du bot) : un marché par serveur
 // Discord, avec le solde et l'inventaire vendable de la personne.
 export async function fetchMyMarkets() {
   let res;

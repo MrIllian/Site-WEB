@@ -7,7 +7,7 @@ const links = [
   { to: "/", label: "Accueil" },
   { to: "/serveurs", label: "Serveurs" },
   { to: "/shop-admin", label: "Shop admin" },
-  { to: "/shop-joueurs", label: "Shop joueurs" },
+  { to: "/shop-joueurs", label: "Marché" },
   { to: "/inventaire", label: "Inventaire" },
   { to: "/statut", label: "Statut" },
   { to: "/index", label: "Index" },

@@ -1,4 +1,4 @@
-import { ref, reactive, computed, watch } from "vue";
+import { ref, reactive, computed, watch, nextTick } from "vue";
 import { auth } from "../store/auth.js";
 import { fetchMyMarkets, buyListing, cancelListing, createListing } from "../actions/shop.js";
 import { coins } from "../lib/format.js";
@@ -91,6 +91,16 @@ export default {
       return runAction(listing.id, () => cancelListing(selectedId.value, listing.id));
     }
 
+    // Bouton « Vendre » de l'inventaire : ouvre le formulaire déjà rempli.
+    async function sellFromInventory(category, item) {
+      showSellForm.value = true;
+      sellError.value = "";
+      sellDraft.category = category;
+      await nextTick(); // laisse le watch sur la catégorie vider l'objet d'abord
+      sellDraft.itemName = item.name;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     async function submitSell() {
       isPublishing.value = true;
       const result = await createListing(selectedId.value, sellDraft);
@@ -110,16 +120,16 @@ export default {
       auth, FILTERS, availableServers, selectedId, filter, market, balance, listings,
       isLoading, loadError, showSellForm, sellDraft, sellError, isPublishing,
       sellCategories, sellItems, selectedOwned, busyId, feedback, coins,
-      buy, cancel, submitSell,
+      buy, cancel, submitSell, sellFromInventory,
     };
   },
   template: /* html */ `
     <section class="wrap" style="padding-block:48px 90px;">
       <div class="section-head">
         <div>
-          <span class="eyebrow" style="margin-bottom:10px;">Économie de joueurs</span>
-          <h2>Shop inter-joueurs</h2>
-          <p>Achetez et vendez des objets de votre inventaire avec les autres membres, en PikaCoins — le même marché que <span class="mono">/market</span> sur Discord.</p>
+          <span class="eyebrow" style="margin-bottom:10px;">Marché</span>
+          <h2>Shop inter-membres</h2>
+          <p>Achetez et vendez des objets de votre inventaire avec les autres membres du serveur, en PikaCoins — le même marché que <span class="mono">/market</span> sur Discord.</p>
         </div>
         <button v-if="market" class="btn btn--primary" @click="showSellForm = !showSellForm">
           {{ showSellForm ? 'Annuler' : '+ Mettre en vente' }}
@@ -215,6 +225,24 @@ export default {
 
         <div v-if="feedback" class="balance-strip" :style="{ color: feedback.ok ? 'var(--lime)' : 'var(--coral)' }">
           {{ feedback.ok ? '✓' : '✕' }} {{ feedback.message }}
+        </div>
+
+        <div class="card" style="margin-bottom:24px;">
+          <span class="eyebrow" style="margin-bottom:14px;">Votre inventaire sur ce serveur</span>
+          <div v-if="!sellCategories.length" class="mono" style="font-size:12.5px;color:var(--ink-3);">
+            Rien pour l'instant — gagnez ou achetez des objets sur Discord, ils apparaîtront ici.
+          </div>
+          <div v-else class="inventory-list">
+            <template v-for="c in sellCategories" :key="c.category">
+              <div v-for="i in c.items" :key="c.category + i.name" class="inventory-list__item">
+                <span>
+                  {{ i.name }}<span v-if="c.category === 'items'" class="mono" style="color:var(--ink-3);"> ×{{ i.quantity }}</span>
+                  <span class="mono" style="display:block;font-size:11px;color:var(--ink-3);">{{ c.name }}</span>
+                </span>
+                <button class="btn btn--sm btn--subtle" @click="sellFromInventory(c.category, i)">Vendre</button>
+              </div>
+            </template>
+          </div>
         </div>
 
         <div v-if="!listings.length" class="empty">

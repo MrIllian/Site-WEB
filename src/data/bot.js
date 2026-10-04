@@ -43,5 +43,5 @@ export const news = [
 // serveurs, ping…) sont ajoutés par HomePage à partir de /api/stats.
 export const ticker = [
   "nouvelle commande /whitelist ajouter",
-  "les enchères inter-joueurs sont en bêta",
+  "vendez vos objets aux autres membres sur le marché",
 ];

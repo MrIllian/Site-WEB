@@ -113,6 +113,18 @@
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 16px;
 }
+.inventory-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.inventory-list__item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+}
 .sell-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
