@@ -20,3 +20,33 @@ export const router = createRouter({
     return { top: 0 };
   },
 });
+
+// Les pages sont chargées à la demande. Si le site a été mis à jour pendant
+// qu'un onglet était ouvert, cet onglet garde en mémoire les ANCIENNES
+// versions des modules communs (lib/format.js…) : la nouvelle page qu'on
+// ouvre peut alors ne pas trouver ce qu'elle importe, et la navigation
+// échoue sans rien afficher (ex. « Accueil » qui ne fait rien). Dans ce
+// cas, on recharge le site directement sur la page demandée — une seule
+// fois, pour ne jamais boucler si l'erreur venait d'ailleurs.
+const RELOAD_KEY = "beep_reload_after_update";
+
+router.onError((error, to) => {
+  const isModuleError =
+    error instanceof SyntaxError ||
+    /dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+      String(error?.message)
+    );
+  if (!isModuleError) return;
+
+  let lastReload = 0;
+  try {
+    lastReload = Number(sessionStorage.getItem(RELOAD_KEY)) || 0;
+  } catch {}
+  if (Date.now() - lastReload < 10000) return;
+  try {
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+  } catch {}
+
+  window.location.hash = to.fullPath;
+  window.location.reload();
+});
