@@ -9,7 +9,9 @@ export function validateServerDraft(draft) {
 }
 
 export function validateListingDraft(draft) {
-  if (!draft.item.trim()) return "Le nom de l'objet est requis.";
-  if (!(Number(draft.price) > 0)) return "Le prix doit être supérieur à 0.";
+  if (!draft.category || !draft.itemName) return "Choisissez un objet de votre inventaire.";
+  if (!(Number.isInteger(Number(draft.quantity)) && Number(draft.quantity) > 0)) return "La quantité doit être un entier supérieur à 0.";
+  if (!(Number.isInteger(Number(draft.price)) && Number(draft.price) > 0)) return "Le prix doit être un entier supérieur à 0.";
+  if (!draft.rarity) return "Choisissez une rareté.";
   return null;
 }

@@ -465,6 +465,34 @@ function handleShopBuy(req, res, guildId, itemId) {
   return relayToBotApi(res, "POST", `/internal/guilds/${guildId}/shop/${itemId}/buy`, { userId: session.id });
 }
 
+// Marché inter-joueurs : même principe que le shop admin, l'id Discord
+// vient de la session signée et le bot vérifie l'appartenance au serveur.
+function handleMyMarkets(req, res) {
+  const session = getSession(req);
+  if (!session) {
+    res.writeHead(401, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }));
+    return;
+  }
+  return relayToBotApi(res, "GET", `/internal/users/${session.id}/market`);
+}
+
+async function handleMarketAction(req, res, botPath, withBody) {
+  const session = getSession(req);
+  if (!session) {
+    res.writeHead(401, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }));
+    return;
+  }
+  const body = withBody ? await readJsonBody(req) : {};
+  return relayToBotApi(res, "POST", botPath, {
+    category: body.category,
+    itemName: body.itemName,
+    quantity: body.quantity,
+    price: body.price,
+    rarity: body.rarity,
+    userId: session.id,
+  });
+}
+
 const server = http.createServer((req, res) => {
   Promise.resolve()
     .then(async () => {
@@ -492,6 +520,17 @@ const server = http.createServer((req, res) => {
       if (url.pathname === "/api/shops" && req.method === "GET") return handleMyShops(req, res);
       const buyMatch = url.pathname.match(/^\/api\/shops\/(\d+)\/items\/(\d+)\/buy$/);
       if (buyMatch && req.method === "POST") return handleShopBuy(req, res, buyMatch[1], buyMatch[2]);
+
+      if (url.pathname === "/api/market" && req.method === "GET") return handleMyMarkets(req, res);
+      const marketCreateMatch = url.pathname.match(/^\/api\/market\/(\d+)\/listings$/);
+      if (marketCreateMatch && req.method === "POST") {
+        return handleMarketAction(req, res, `/internal/guilds/${marketCreateMatch[1]}/market`, true);
+      }
+      const marketActionMatch = url.pathname.match(/^\/api\/market\/(\d+)\/listings\/(\d+)\/(buy|cancel)$/);
+      if (marketActionMatch && req.method === "POST") {
+        const [, guildId, listingId, action] = marketActionMatch;
+        return handleMarketAction(req, res, `/internal/guilds/${guildId}/market/${listingId}/${action}`, false);
+      }
 
       return serveStatic(req, res, url.pathname);
     })
