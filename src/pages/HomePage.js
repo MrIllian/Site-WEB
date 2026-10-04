@@ -1,8 +1,18 @@
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import Marquee from "../components/ui/Marquee.js";
 import { bot, news, ticker } from "../data/bot.js";
 import { botProfile } from "../store/botProfile.js";
-import { formatDate } from "../lib/format.js";
+import { formatDate, formatNumber } from "../lib/format.js";
+import { fetchStats } from "../actions/bot.js";
+
+function formatUptime(isoString) {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(isoString).getTime()) / 60000));
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  if (days > 0) return `${days}j ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes % 60}min`;
+  return `${minutes}min`;
+}
 
 export default {
   name: "HomePage",
@@ -18,7 +28,35 @@ export default {
       profile.value?.banner ? { backgroundImage: `url(${profile.value.banner})`, backgroundSize: "cover", backgroundPosition: "center" } : {}
     );
 
-    return { bot, news, ticker, profile, displayName, displayHandle, displayBio, displayVersion, displayCreatedAt, bannerStyle };
+    // Statistiques réelles du bot (/api/stats). Tant qu'elles ne sont pas
+    // chargées — ou si le bot est injoignable — on affiche « — » plutôt
+    // que des chiffres inventés.
+    const liveStats = ref(null);
+    onMounted(async () => {
+      const result = await fetchStats();
+      if (result.success) liveStats.value = result.stats;
+    });
+
+    const stats = computed(() => {
+      const s = liveStats.value;
+      return [
+        { label: "serveurs", value: s ? formatNumber(s.guilds) : "—" },
+        { label: "membres", value: s ? formatNumber(s.members) : "—" },
+        { label: "commandes", value: s ? formatNumber(s.commands) : "—" },
+        { label: "en ligne depuis", value: s?.startedAt ? formatUptime(s.startedAt) : "—" },
+      ];
+    });
+
+    const tickerItems = computed(() => {
+      const s = liveStats.value;
+      if (!s) return ticker;
+      const live = [`beep veille sur ${formatNumber(s.guilds)} serveurs discord`];
+      if (s.publicServers) live.push(`${formatNumber(s.publicServers)} serveurs minecraft dans le classement public`);
+      if (s.pingMs != null) live.push(`ping discord actuel : ${s.pingMs}ms`);
+      return [...live, ...ticker];
+    });
+
+    return { bot, news, stats, tickerItems, profile, displayName, displayHandle, displayBio, displayVersion, displayCreatedAt, bannerStyle };
   },
   template: /* html */ `
     <section class="hero wrap">
@@ -35,8 +73,8 @@ export default {
             <router-link to="/serveurs" class="btn btn--ghost">Voir le classement</router-link>
           </div>
           <div class="hero__stats">
-            <div v-for="s in bot.stats" :key="s.label" class="hero__stat">
-              <div class="hero__stat-value mono">{{ s.value }}{{ s.suffix }}</div>
+            <div v-for="s in stats" :key="s.label" class="hero__stat">
+              <div class="hero__stat-value mono">{{ s.value }}</div>
               <div class="hero__stat-label">{{ s.label }}</div>
             </div>
           </div>
@@ -67,7 +105,7 @@ export default {
       </div>
     </section>
 
-    <Marquee :items="ticker" />
+    <Marquee :items="tickerItems" />
 
     <section class="wrap" style="padding-block:80px;">
       <div class="section-head">

@@ -23,3 +23,16 @@ export async function fetchCommands() {
   if (!Array.isArray(json)) return { success: false, categories: [] };
   return { success: true, categories: json };
 }
+
+export async function fetchStats() {
+  let res;
+  try {
+    res = await fetch("/api/stats", { credentials: "include" });
+  } catch {
+    return { success: false };
+  }
+  if (!res.ok) return { success: false };
+  const json = await res.json().catch(() => null);
+  if (!json) return { success: false };
+  return { success: true, stats: json };
+}

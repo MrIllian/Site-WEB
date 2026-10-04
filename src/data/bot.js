@@ -6,12 +6,6 @@ export const bot = {
   banner: true,
   bio: "petit compagnon qui veille sur vos serveurs Minecraft depuis Discord. ping, whitelist, classements, shops, économie — beep s'occupe du reste pendant que vous jouez.",
   invite: "#",
-  stats: [
-    { label: "serveurs", value: "1 284", suffix: "" },
-    { label: "joueurs suivis", value: "58 900", suffix: "+" },
-    { label: "commandes / jour", value: "212k", suffix: "" },
-    { label: "disponibilité", value: "99.94", suffix: "%" },
-  ],
 };
 
 export const news = [
@@ -45,10 +39,9 @@ export const news = [
   },
 ];
 
+// Messages fixes du bandeau défilant — les messages chiffrés (nombre de
+// serveurs, ping…) sont ajoutés par HomePage à partir de /api/stats.
 export const ticker = [
-  "beep surveille 1 284 serveurs en direct",
   "nouvelle commande /whitelist ajouter",
   "les enchères inter-joueurs sont en bêta",
-  "temps de réponse moyen de l'API : 41ms",
-  "68 nouveaux serveurs publiés cette semaine",
 ];
