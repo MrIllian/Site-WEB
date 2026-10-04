@@ -444,6 +444,27 @@ async function handleComment(req, res, guildId) {
   });
 }
 
+// Shop admin : seulement les serveurs Discord dont la personne connectée
+// est membre (vérifié par le bot), avec SON solde sur chacun. L'id
+// Discord vient toujours de la session signée, jamais du navigateur.
+function handleMyShops(req, res) {
+  const session = getSession(req);
+  if (!session) {
+    res.writeHead(401, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }));
+    return;
+  }
+  return relayToBotApi(res, "GET", `/internal/users/${session.id}/shops`);
+}
+
+function handleShopBuy(req, res, guildId, itemId) {
+  const session = getSession(req);
+  if (!session) {
+    res.writeHead(401, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }));
+    return;
+  }
+  return relayToBotApi(res, "POST", `/internal/guilds/${guildId}/shop/${itemId}/buy`, { userId: session.id });
+}
+
 const server = http.createServer((req, res) => {
   Promise.resolve()
     .then(async () => {
@@ -467,6 +488,10 @@ const server = http.createServer((req, res) => {
       if (voteMatch && req.method === "POST") return handleVote(req, res, voteMatch[1]);
       const commentMatch = url.pathname.match(/^\/api\/servers\/(\d+)\/comments$/);
       if (commentMatch && req.method === "POST") return handleComment(req, res, commentMatch[1]);
+
+      if (url.pathname === "/api/shops" && req.method === "GET") return handleMyShops(req, res);
+      const buyMatch = url.pathname.match(/^\/api\/shops\/(\d+)\/items\/(\d+)\/buy$/);
+      if (buyMatch && req.method === "POST") return handleShopBuy(req, res, buyMatch[1], buyMatch[2]);
 
       return serveStatic(req, res, url.pathname);
     })

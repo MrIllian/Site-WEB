@@ -1,21 +1,5 @@
 import { reactive } from "vue";
 
-export const adminShopByServer = reactive({
-  srv1: [
-    { id: "a1", name: "Rang Voyageur", icon: "🧭", desc: "Accès /home ×3, /kit voyageur toutes les 12h.", price: 1200, category: "Rang" },
-    { id: "a2", name: "Rang Bâtisseur", icon: "🏗️", desc: "WorldEdit limité, claims ×2.", price: 2600, category: "Rang" },
-    { id: "a3", name: "Kit Explorateur", icon: "🎒", desc: "Boussole, carte, 8 torches, pain ×16.", price: 300, category: "Kit" },
-    { id: "a4", name: "Élytres gravées", icon: "🪽", desc: "Cosmétique, ne s'use pas.", price: 4200, category: "Cosmétique" },
-  ],
-  srv3: [
-    { id: "a5", name: "Rang Ami de la maison", icon: "🏡", desc: "Accès à la zone créative partagée.", price: 400, category: "Rang" },
-    { id: "a6", name: "Kit Bricoleur", icon: "🧰", desc: "Outils en fer enchantés basiques.", price: 250, category: "Kit" },
-  ],
-  srv6: [
-    { id: "a7", name: "Rang Aventurier+", icon: "⚔️", desc: "Slot de donjon supplémentaire.", price: 1800, category: "Rang" },
-  ],
-});
-
 export const marketByServer = reactive({
   srv1: [
     { id: "m1", type: "vente", item: "Épée d'ender +3", icon: "🗡️", seller: "Fennwick", price: 650 },

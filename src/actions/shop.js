@@ -12,13 +12,35 @@ function recordCoinMovement(label, delta) {
   });
 }
 
-export function buyAdminItem(item) {
-  if (!auth.isAuthenticated) return { success: false, message: "Connectez-vous pour acheter." };
-  if (auth.user.pikaCoins < item.price) return { success: false, message: "Solde insuffisant." };
+// Shop admin réel : les shops (/shopadmin) des serveurs Discord dont la
+// personne connectée est membre, avec son solde PikaCoins sur chacun —
+// l'économie de Beep est par serveur, pas globale.
+export async function fetchMyShops() {
+  let res;
+  try {
+    res = await fetch("/api/shops", { credentials: "include" });
+  } catch {
+    return { success: false, shops: [], message: "Impossible de joindre Beep." };
+  }
+  if (!res.ok) return { success: false, shops: [], message: "Impossible de joindre Beep." };
+  const json = await res.json().catch(() => null);
+  if (!Array.isArray(json)) return { success: false, shops: [], message: "Réponse inattendue de Beep." };
+  return { success: true, shops: json };
+}
 
-  auth.user.pikaCoins -= item.price;
-  recordCoinMovement("Achat — " + item.name, -item.price);
-  return { success: true };
+export async function buyShopItem(guildId, itemId) {
+  if (!auth.isAuthenticated) return { success: false, message: "Connectez-vous pour acheter." };
+  let res;
+  try {
+    res = await fetch(`/api/shops/${guildId}/items/${itemId}/buy`, { method: "POST", credentials: "include" });
+  } catch {
+    return { success: false, message: "Impossible de joindre Beep." };
+  }
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) {
+    return { success: false, message: json?.message || "L'achat a échoué." };
+  }
+  return { success: true, message: json.message, item: json.item, balance: json.balance };
 }
 
 export function buyMarketListing(serverId, listing) {
