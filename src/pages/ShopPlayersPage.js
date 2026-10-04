@@ -4,6 +4,7 @@ import { auth } from "../store/auth.js";
 import { fetchMyMarkets, buyListing, cancelListing, createListing } from "../actions/shop.js";
 import { coins } from "../lib/format.js";
 import ServerPicker from "../components/ui/ServerPicker.js";
+import { useAutoRefresh } from "../lib/useAutoRefresh.js";
 
 const FILTERS = [
   { id: "all", label: "Tout" },
@@ -81,6 +82,7 @@ export default {
     }
 
     watch(() => [auth.isReady, auth.isAuthenticated], () => auth.isReady && load(), { immediate: true });
+    useAutoRefresh(load);
     watch(selectedId, () => {
       feedback.value = null;
       sellError.value = "";

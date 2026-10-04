@@ -24,3 +24,13 @@ export function formatDate(isoString) {
   if (!isoString) return "";
   return new Date(isoString).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
+
+// Durée écoulée depuis une date ISO, ex. « 3j 4h », « 2h 15min », « 12min ».
+export function formatUptime(isoString) {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(isoString).getTime()) / 60000));
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  if (days > 0) return `${days}j ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes % 60}min`;
+  return `${minutes}min`;
+}

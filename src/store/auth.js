@@ -7,12 +7,9 @@ import { initials } from "../lib/format.js";
  * client_secret ni le token Discord : il ne fait que suivre la
  * redirection /api/auth/login puis lire la session via /api/auth/me.
  *
- * Il n'y a pas encore de vraie base de données pour les PikaCoins,
- * badges, etc. (ça viendra avec l'API du bot Beep). En attendant,
- * l'identité (id, pseudo, avatar) est réelle, mais le reste du profil
- * est un profil "par défaut" persisté localement par id Discord, pour
- * que chaque personne qui se connecte ait bien SES propres données et
- * pas celles de quelqu'un d'autre.
+ * Les PikaCoins, objets, badges… viennent du bot (pages Profil,
+ * Inventaire, shops). Ici on ne garde que l'identité Discord et les
+ * préférences d'affichage du site, persistées localement par id Discord.
  */
 
 const PROFILE_KEY_PREFIX = "beep_profile_";
@@ -28,16 +25,12 @@ const state = reactive({
 
 function defaultProfile() {
   return {
-    pikaCoins: 0,
-    pikaCoinsHistory: [],
     settings: {
       accent: "violet",
       showBadges: true,
-      publicProfile: true,
       compactCards: false,
       bio: "",
     },
-    badges: [],
   };
 }
 
@@ -55,7 +48,6 @@ function loadLocalProfile(discordUser) {
     handle: discordUser.handle,
     initials: initials(discordUser.username),
     avatar: discordUser.avatar,
-    memberSince: persisted.memberSince || new Date().toISOString().slice(0, 10),
     ...defaultProfile(),
     ...persisted,
   };

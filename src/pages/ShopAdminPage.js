@@ -3,6 +3,7 @@ import { auth } from "../store/auth.js";
 import { fetchMyShops, buyShopItem } from "../actions/shop.js";
 import { coins } from "../lib/format.js";
 import ServerPicker from "../components/ui/ServerPicker.js";
+import { useAutoRefresh } from "../lib/useAutoRefresh.js";
 
 // Emojis personnalisés Discord (ex. la Pokéball : "<:Pokeball:123…>") →
 // image du CDN Discord ; les emojis Unicode sont affichés tels quels.
@@ -34,7 +35,7 @@ export default {
         shops.value = [];
         return;
       }
-      isLoading.value = true;
+      isLoading.value = !shops.value.length;
       const result = await fetchMyShops();
       isLoading.value = false;
       loadError.value = result.success ? null : result.message;
@@ -47,6 +48,7 @@ export default {
     // auth.isReady passe à true après le premier /api/auth/me : on attend
     // de savoir si la personne est connectée avant de charger.
     watch(() => [auth.isReady, auth.isAuthenticated], () => auth.isReady && load(), { immediate: true });
+    useAutoRefresh(load);
     watch(selectedId, () => (feedback.value = null));
 
     function isSoldOut(item) {

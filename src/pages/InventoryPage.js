@@ -3,6 +3,7 @@ import { auth, authActions } from "../store/auth.js";
 import { fetchMyInventory } from "../actions/inventory.js";
 import { formatNumber, coins } from "../lib/format.js";
 import ServerPicker from "../components/ui/ServerPicker.js";
+import { useAutoRefresh } from "../lib/useAutoRefresh.js";
 
 // Emojis personnalisés Discord (ex. "<:PikaCoin:123…>") → image du CDN.
 function customEmojiUrl(emoji) {
@@ -33,7 +34,7 @@ export default {
         servers.value = [];
         return;
       }
-      isLoading.value = true;
+      isLoading.value = !servers.value.length;
       const result = await fetchMyInventory();
       isLoading.value = false;
       loadError.value = result.success ? null : result.message;
@@ -44,6 +45,7 @@ export default {
     }
 
     watch(() => [auth.isReady, auth.isAuthenticated], () => auth.isReady && load(), { immediate: true });
+    useAutoRefresh(load);
 
     return {
       auth, authActions, availableServers, selectedId, current, itemsCount, isEmpty,

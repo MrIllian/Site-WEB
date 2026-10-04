@@ -1,18 +1,10 @@
 import { computed, ref, onMounted } from "vue";
 import Marquee from "../components/ui/Marquee.js";
-import { bot, news, ticker } from "../data/bot.js";
+import { bot, ticker } from "../data/bot.js";
+import { useAutoRefresh } from "../lib/useAutoRefresh.js";
 import { botProfile } from "../store/botProfile.js";
-import { formatDate, formatNumber } from "../lib/format.js";
+import { formatDate, formatNumber, formatUptime } from "../lib/format.js";
 import { fetchStats } from "../actions/bot.js";
-
-function formatUptime(isoString) {
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(isoString).getTime()) / 60000));
-  const days = Math.floor(minutes / 1440);
-  const hours = Math.floor((minutes % 1440) / 60);
-  if (days > 0) return `${days}j ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes % 60}min`;
-  return `${minutes}min`;
-}
 
 export default {
   name: "HomePage",
@@ -22,7 +14,7 @@ export default {
     const displayName = computed(() => profile.value?.username || bot.name);
     const displayHandle = computed(() => (profile.value?.discriminator ? `#${profile.value.discriminator}` : null));
     const displayBio = computed(() => profile.value?.description || bot.bio);
-    const displayVersion = computed(() => (profile.value?.version ? `Bêta v${profile.value.version}` : `${bot.version} ${bot.codename}`));
+    const displayVersion = computed(() => (profile.value?.version ? `Bêta v${profile.value.version}` : bot.version));
     const displayCreatedAt = computed(() => formatDate(profile.value?.createdAt || "2026-05-20"));
     const bannerStyle = computed(() =>
       profile.value?.banner ? { backgroundImage: `url(${profile.value.banner})`, backgroundSize: "cover", backgroundPosition: "center" } : {}
@@ -32,10 +24,12 @@ export default {
     // chargées — ou si le bot est injoignable — on affiche « — » plutôt
     // que des chiffres inventés.
     const liveStats = ref(null);
-    onMounted(async () => {
+    async function loadStats() {
       const result = await fetchStats();
       if (result.success) liveStats.value = result.stats;
-    });
+    }
+    onMounted(loadStats);
+    useAutoRefresh(loadStats);
 
     const stats = computed(() => {
       const s = liveStats.value;
@@ -56,7 +50,7 @@ export default {
       return [...live, ...ticker];
     });
 
-    return { bot, news, stats, tickerItems, profile, displayName, displayHandle, displayBio, displayVersion, displayCreatedAt, bannerStyle };
+    return { bot, stats, tickerItems, profile, displayName, displayHandle, displayBio, displayVersion, displayCreatedAt, bannerStyle };
   },
   template: /* html */ `
     <section class="hero wrap">
@@ -106,24 +100,5 @@ export default {
     </section>
 
     <Marquee :items="tickerItems" />
-
-    <section class="wrap" style="padding-block:80px;">
-      <div class="section-head">
-        <div>
-          <span class="eyebrow" style="margin-bottom:10px;">Journal</span>
-          <h2>Actus de Beep</h2>
-        </div>
-      </div>
-      <div class="news-grid">
-        <article v-for="n in news" :key="n.id" class="card news-card bracketed">
-          <div class="news-card__top">
-            <span class="badge" :class="n.tag === 'NOUVEAU' ? 'badge--lime' : n.tag === 'FIX' ? 'badge--coral' : 'badge--brand'">{{ n.tag }}</span>
-            <time class="mono" style="font-size:11.5px;color:var(--ink-3)">{{ n.date }}</time>
-          </div>
-          <h3 class="news-card__title">{{ n.title }}</h3>
-          <p class="news-card__body">{{ n.body }}</p>
-        </article>
-      </div>
-    </section>
   `,
 };
