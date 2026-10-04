@@ -28,7 +28,6 @@ function defaultProfile() {
     settings: {
       accent: "violet",
       showBadges: true,
-      compactCards: false,
       bio: "",
     },
   };
@@ -48,15 +47,22 @@ function loadLocalProfile(discordUser) {
     handle: discordUser.handle,
     initials: initials(discordUser.username),
     avatar: discordUser.avatar,
-    ...defaultProfile(),
-    ...persisted,
+    // Fusion réglage par réglage : un ancien profil enregistré auquel il
+    // manquerait un réglage récupère la valeur par défaut. Les anciens
+    // champs fictifs (pikaCoins, badges…) ne sont plus repris.
+    settings: { ...defaultProfile().settings, ...(persisted.settings || {}) },
   };
 }
 
 function persistLocalProfile() {
   if (!state.user) return;
   const { id, username, handle, initials: _initials, avatar, ...persisted } = state.user;
-  localStorage.setItem(PROFILE_KEY_PREFIX + id, JSON.stringify(persisted));
+  try {
+    localStorage.setItem(PROFILE_KEY_PREFIX + id, JSON.stringify(persisted));
+  } catch {
+    // Stockage indisponible (navigation privée…) : les préférences
+    // restent actives jusqu'au rechargement de la page.
+  }
 }
 
 watch(() => state.user, persistLocalProfile, { deep: true });

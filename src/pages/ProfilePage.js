@@ -53,11 +53,15 @@ export default {
     const badges = computed(() => collect("badges"));
     const titles = computed(() => collect("titles"));
 
+    const accentColor = computed(
+      () => (accentOptions.find((a) => a.id === auth.user?.settings.accent) || accentOptions[0]).color
+    );
+
     const createdAt = computed(() => (auth.user ? formatDate(discordCreatedAt(auth.user.id)) : ""));
 
     return {
       auth, authActions, accentOptions, setAccent, toggleSetting, coins,
-      isLoading, loadError, total, withEconomy, badges, titles, createdAt,
+      isLoading, loadError, total, withEconomy, badges, titles, createdAt, accentColor,
     };
   },
   template: /* html */ `
@@ -72,17 +76,17 @@ export default {
       </div>
 
       <div v-else class="profile-layout">
-        <aside class="id-card bracketed" style="--corner-color: var(--brand);">
+        <aside class="id-card bracketed" :style="{ '--accent': accentColor }">
           <div class="id-card__banner"></div>
           <div class="id-card__body">
             <img v-if="auth.user.avatar" :src="auth.user.avatar" class="id-card__avatar id-card__avatar--img" alt="" />
             <div v-else class="id-card__avatar">{{ auth.user.initials }}</div>
             <h3 style="margin-top:14px; font-size:19px;">{{ auth.user.username }}</h3>
             <div class="mono" style="font-size:12px; color:var(--ink-3); margin-top:2px;">@{{ auth.user.handle }}</div>
-            <p style="font-size:13px; color:var(--ink-2); margin-top:14px; line-height:1.6;">{{ auth.user.settings.bio }}</p>
+            <p v-if="auth.user.settings.bio" style="font-size:13px; color:var(--ink-2); margin-top:14px; line-height:1.6; white-space:pre-line; overflow-wrap:anywhere;">{{ auth.user.settings.bio }}</p>
             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:16px;" v-if="auth.user.settings.showBadges && (badges.length || titles.length)">
-              <span class="badge badge--amber" v-for="t in titles" :key="'t' + t.name" :title="t.servers.join(', ')">🏅 {{ t.name }}</span>
-              <span class="badge badge--brand" v-for="b in badges" :key="'b' + b.name" :title="b.servers.join(', ')">🎖️ {{ b.name }}</span>
+              <span class="badge id-card__badge" v-for="t in titles" :key="'t' + t.name" :title="t.servers.join(', ')">🏅 {{ t.name }}</span>
+              <span class="badge id-card__badge" v-for="b in badges" :key="'b' + b.name" :title="b.servers.join(', ')">🎖️ {{ b.name }}</span>
             </div>
             <div style="border-top:1px solid var(--line); margin-top:18px; padding-top:14px; display:flex; justify-content:space-between;">
               <span class="eyebrow" style="font-size:10.5px;">Sur Discord depuis</span>
