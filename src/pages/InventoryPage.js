@@ -66,7 +66,7 @@ export default {
           <div>
             <span class="eyebrow" style="margin-bottom:10px;">Votre profil de jeu</span>
             <h2>Inventaire</h2>
-            <p>Rôles, solde et objets que Beep connaît pour vous sur le serveur sélectionné — les mêmes que sur Discord.</p>
+            <p>Rôles, solde et objets que Beep connaît pour vous sur le serveur sélectionné — les mêmes que sur Discord. « Vendre » met un objet en vente sur le Marché.</p>
           </div>
         </div>
 
@@ -128,14 +128,18 @@ export default {
                 {{ c.name }}
                 <template v-if="c.key === 'items' && current.itemsLimit"> · {{ itemsCount }}/{{ current.itemsLimit }}</template>
               </span>
-              <div class="inv-grid">
+              <div class="inv-grid inv-grid--sellable">
                 <div class="inv-tile" v-for="it in c.items" :key="it.name">
                   <span class="inv-tile__icon">
                     <img v-if="customEmojiUrl(c.emoji)" :src="customEmojiUrl(c.emoji)" alt="" style="width:22px;height:22px;" />
                     <template v-else>{{ c.emoji }}</template>
                   </span>
-                  <span>{{ it.name }}</span>
+                  <span class="inv-tile__name" :title="it.name">{{ it.name }}</span>
                   <span v-if="c.key === 'items'" class="inv-tile__qty">×{{ formatNumber(it.quantity) }}</span>
+                  <router-link
+                    class="btn btn--sm btn--subtle inv-tile__sell"
+                    :to="{ path: '/shop-joueurs', query: { serveur: current.guildId, categorie: c.key, objet: it.name } }"
+                  >Vendre</router-link>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { ref, reactive, computed, watch, nextTick } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { auth } from "../store/auth.js";
 import { fetchMyMarkets, buyListing, cancelListing, createListing } from "../actions/shop.js";
 import { coins } from "../lib/format.js";
@@ -17,6 +18,8 @@ export default {
   name: "ShopPlayersPage",
   components: { ServerPicker },
   setup() {
+    const route = useRoute();
+    const router = useRouter();
     const markets = ref([]);
     const isLoading = ref(false);
     const loadError = ref(null);
@@ -62,6 +65,19 @@ export default {
       if (!markets.value.some((m) => m.guildId === selectedId.value)) {
         selectedId.value = markets.value[0]?.guildId || null;
       }
+      await applySellLink();
+    }
+
+    // Lien « Vendre » depuis la page Inventaire :
+    // #/shop-joueurs?serveur=<guildId>&categorie=<clé>&objet=<nom>
+    async function applySellLink() {
+      const { serveur, categorie, objet } = route.query;
+      if (!serveur || !categorie || !objet) return;
+      router.replace({ query: {} });
+      if (!markets.value.some((m) => m.guildId === serveur)) return;
+      selectedId.value = serveur;
+      await nextTick(); // le watch sur selectedId remet le formulaire à zéro d'abord
+      await sellFromInventory(categorie, { name: objet });
     }
 
     watch(() => [auth.isReady, auth.isAuthenticated], () => auth.isReady && load(), { immediate: true });
@@ -91,7 +107,7 @@ export default {
       return runAction(listing.id, () => cancelListing(selectedId.value, listing.id));
     }
 
-    // Bouton « Vendre » de l'inventaire : ouvre le formulaire déjà rempli.
+    // Ouvre le formulaire de vente déjà rempli avec cet objet.
     async function sellFromInventory(category, item) {
       showSellForm.value = true;
       sellError.value = "";
@@ -120,7 +136,7 @@ export default {
       auth, FILTERS, availableServers, selectedId, filter, market, balance, listings,
       isLoading, loadError, showSellForm, sellDraft, sellError, isPublishing,
       sellCategories, sellItems, selectedOwned, busyId, feedback, coins,
-      buy, cancel, submitSell, sellFromInventory,
+      buy, cancel, submitSell,
     };
   },
   template: /* html */ `
@@ -225,24 +241,6 @@ export default {
 
         <div v-if="feedback" class="balance-strip" :style="{ color: feedback.ok ? 'var(--lime)' : 'var(--coral)' }">
           {{ feedback.ok ? '✓' : '✕' }} {{ feedback.message }}
-        </div>
-
-        <div class="card" style="margin-bottom:24px;">
-          <span class="eyebrow" style="margin-bottom:14px;">Votre inventaire sur ce serveur</span>
-          <div v-if="!sellCategories.length" class="mono" style="font-size:12.5px;color:var(--ink-3);">
-            Rien pour l'instant — gagnez ou achetez des objets sur Discord, ils apparaîtront ici.
-          </div>
-          <div v-else class="inventory-list">
-            <template v-for="c in sellCategories" :key="c.category">
-              <div v-for="i in c.items" :key="c.category + i.name" class="inventory-list__item">
-                <span>
-                  {{ i.name }}<span v-if="c.category === 'items'" class="mono" style="color:var(--ink-3);"> ×{{ i.quantity }}</span>
-                  <span class="mono" style="display:block;font-size:11px;color:var(--ink-3);">{{ c.name }}</span>
-                </span>
-                <button class="btn btn--sm btn--subtle" @click="sellFromInventory(c.category, i)">Vendre</button>
-              </div>
-            </template>
-          </div>
         </div>
 
         <div v-if="!listings.length" class="empty">
